@@ -12,6 +12,7 @@ const supaUrl = import.meta.env.VITE_SUPABASE_URL || ''
 
 // Gateways que podem entrar no rodízio (ordem canônica = prioridade após o ativo).
 const GATEWAYS_RODIZIO = [
+  { id: 'umbrella', nome: 'Umbrella' },
   { id: 'payforge', nome: 'PayForge' },
   { id: 'pagarme', nome: 'Pagar.me' },
 ]
@@ -120,6 +121,12 @@ export default function AdminConfig() {
   const [pfWebhookSalvo, setPfWebhookSalvo] = useState('')
   const [pfTest, setPfTest] = useState(null)
   const [pfTestBusy, setPfTestBusy] = useState(false)
+  const [umKey, setUmKey] = useState('')
+  const [umKeySalvo, setUmKeySalvo] = useState('')
+  const [umWebhook, setUmWebhook] = useState('')
+  const [umWebhookSalvo, setUmWebhookSalvo] = useState('')
+  const [umTest, setUmTest] = useState(null)
+  const [umTestBusy, setUmTestBusy] = useState(false)
   // Chaves do Pagar.me (secret/webhook) — agora configuráveis pelo /admin
   const [pgSecret, setPgSecret] = useState('')
   const [pgSecretSalvo, setPgSecretSalvo] = useState('')
@@ -184,7 +191,7 @@ export default function AdminConfig() {
 
     getConfig(CONFIG_KEYS.resendKey).then((v) => { setResend(v); setResendSalvo(v) })
     getConfig(CONFIG_KEYS.emailRemetente).then((v) => { setRemetente(v); setRemetenteSalvo(v) })
-    getConfig(CONFIG_KEYS.gatewayAtivo).then((v) => { const g = v === 'payforge' ? v : 'pagarme'; setGateway(g); setGatewaySalvo(g) })
+    getConfig(CONFIG_KEYS.gatewayAtivo).then((v) => { const g = GATEWAYS_RODIZIO.some((x) => x.id === v) ? v : 'pagarme'; setGateway(g); setGatewaySalvo(g) })
     getConfig(CONFIG_KEYS.gatewayRodizio).then((v) => {
       const arr = String(v || '').split(',').map((s) => s.trim().toLowerCase()).filter((s) => GATEWAYS_RODIZIO.some((g) => g.id === s))
       setRodizio(arr); setRodizioSalvo(arr)
@@ -192,6 +199,8 @@ export default function AdminConfig() {
     getConfig(CONFIG_KEYS.payforgeSecretKey).then((v) => { setPfSecret(v); setPfSecretSalvo(v) })
     getConfig(CONFIG_KEYS.payforgePublicKey).then((v) => { setPfPublic(v); setPfPublicSalvo(v) })
     getConfig(CONFIG_KEYS.payforgeWebhookKey).then((v) => { setPfWebhook(v); setPfWebhookSalvo(v) })
+    getConfig(CONFIG_KEYS.umbrellaApiKey).then((v) => { setUmKey(v); setUmKeySalvo(v) })
+    getConfig(CONFIG_KEYS.umbrellaWebhookKey).then((v) => { setUmWebhook(v); setUmWebhookSalvo(v) })
     getConfig(CONFIG_KEYS.pagarmeSecretKey).then((v) => { setPgSecret(v); setPgSecretSalvo(v) })
     getConfig(CONFIG_KEYS.pagarmeWebhookKey).then((v) => { setPgWebhook(v); setPgWebhookSalvo(v) })
     getConfig(CONFIG_KEYS.serasaClientIdKey).then((v) => { setSeClientId(v); setSeClientIdSalvo(v) })
@@ -491,12 +500,16 @@ export default function AdminConfig() {
       await setConfig(CONFIG_KEYS.payforgeSecretKey, pfSecret.trim())
       await setConfig(CONFIG_KEYS.payforgePublicKey, pfPublic.trim())
       await setConfig(CONFIG_KEYS.payforgeWebhookKey, pfWebhook.trim())
+      await setConfig(CONFIG_KEYS.umbrellaApiKey, umKey.trim())
+      await setConfig(CONFIG_KEYS.umbrellaWebhookKey, umWebhook.trim())
       await setConfig(CONFIG_KEYS.pagarmeSecretKey, pgSecret.trim())
       await setConfig(CONFIG_KEYS.pagarmeWebhookKey, pgWebhook.trim())
       setGatewaySalvo(gateway)
       setPfSecretSalvo(pfSecret.trim())
       setPfPublicSalvo(pfPublic.trim())
       setPfWebhookSalvo(pfWebhook.trim())
+      setUmKeySalvo(umKey.trim())
+      setUmWebhookSalvo(umWebhook.trim())
       setPgSecretSalvo(pgSecret.trim())
       setPgWebhookSalvo(pgWebhook.trim())
       setRodizio(rodizioOrdenado)
@@ -509,23 +522,25 @@ export default function AdminConfig() {
     setGwBusy(false)
   }
 
-  // Diagnóstico: usa as chaves SALVAS e testa a conexão com a PayForge.
-  const testarPayforge = async () => {
-    setPfTestBusy(true)
-    setPfTest(null)
+  // Diagnóstico: usa as chaves SALVAS e testa a conexão com o gateway.
+  const testarGateway = async (gw, setBusy, setResultado) => {
+    setBusy(true)
+    setResultado(null)
     try {
-      const r = await fetch('/api/payforge/health')
+      const r = await fetch(`/api/${gw}/health`)
       const ct = r.headers.get('content-type') || ''
       if (!ct.includes('application/json')) {
-        setPfTest({ ok: false, message: 'O teste só funciona no site publicado (no localhost as rotas /api não rodam).' })
+        setResultado({ ok: false, message: 'O teste só funciona no site publicado (no localhost as rotas /api não rodam).' })
       } else {
-        setPfTest(await r.json())
+        setResultado(await r.json())
       }
     } catch (e) {
-      setPfTest({ ok: false, message: e.message || 'Falha ao testar.' })
+      setResultado({ ok: false, message: e.message || 'Falha ao testar.' })
     }
-    setPfTestBusy(false)
+    setBusy(false)
   }
+  const testarPayforge = () => testarGateway('payforge', setPfTestBusy, setPfTest)
+  const testarUmbrella = () => testarGateway('umbrella', setUmTestBusy, setUmTest)
 
   const salvarBaseConsulta = async () => {
     setBaseMsg('')
@@ -587,6 +602,7 @@ export default function AdminConfig() {
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   const isLocal = /localhost|127\.0\.0\.1/.test(origin)
   const webhookUrl = `${origin}/api/pagarme/webhook${pgWebhookSalvo ? `?secret=${encodeURIComponent(pgWebhookSalvo)}` : ''}`
+  const umbrellaWebhookUrl = `${origin}/api/umbrella/webhook${umWebhookSalvo ? `?secret=${encodeURIComponent(umWebhookSalvo)}` : ''}`
   const payforgeWebhookUrl = `${origin}/api/payforge/webhook${pfWebhookSalvo ? `?secret=${encodeURIComponent(pfWebhookSalvo)}` : ''}`
 
   useEffect(() => {
@@ -759,6 +775,7 @@ export default function AdminConfig() {
         <div className="cfg-copy">
           <select value={gateway} onChange={(e) => setGateway(e.target.value)}>
             <option value="pagarme">Pagar.me</option>
+            <option value="umbrella">Umbrella</option>
             <option value="payforge">PayForge</option>
           </select>
         </div>
@@ -784,6 +801,33 @@ export default function AdminConfig() {
             : 'Rodízio desativado — usando só o gateway ativo.'}
         </p>
 
+        {gateway === 'umbrella' && (
+          <>
+            <p className="usr-muted"><strong>API Key</strong> da Umbrella (painel da Umbrella → Integrações / API)</p>
+            <div className="cfg-copy">
+              <input
+                type="password"
+                placeholder="API Key da Umbrella"
+                value={umKey}
+                onChange={(e) => setUmKey(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+            <p className="usr-muted">
+              <strong>Webhook Secret</strong> (opcional) — qualquer texto aleatório. Vai como <code>?secret=…</code> na
+              URL de aviso que o site manda em cada cobrança, e o webhook rejeita chamadas sem ele.
+            </p>
+            <div className="cfg-copy">
+              <input
+                type="password"
+                placeholder="Webhook Secret (opcional)"
+                value={umWebhook}
+                onChange={(e) => setUmWebhook(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+          </>
+        )}
         {gateway === 'payforge' && (
           <>
             <p className="usr-muted">Chave <strong>secreta</strong> (Secret Key) da PayForge</p>
@@ -857,7 +901,7 @@ export default function AdminConfig() {
         <div className="cfg-copy">
           <button
             onClick={salvarGateway}
-            disabled={gwBusy || (gateway === gatewaySalvo && pfSecret.trim() === pfSecretSalvo && pfPublic.trim() === pfPublicSalvo && pfWebhook.trim() === pfWebhookSalvo && pgSecret.trim() === pgSecretSalvo && pgWebhook.trim() === pgWebhookSalvo && JSON.stringify([...rodizio].sort()) === JSON.stringify([...rodizioSalvo].sort()))}
+            disabled={gwBusy || (gateway === gatewaySalvo && umKey.trim() === umKeySalvo && umWebhook.trim() === umWebhookSalvo && pfSecret.trim() === pfSecretSalvo && pfPublic.trim() === pfPublicSalvo && pfWebhook.trim() === pfWebhookSalvo && pgSecret.trim() === pgSecretSalvo && pgWebhook.trim() === pgWebhookSalvo && JSON.stringify([...rodizio].sort()) === JSON.stringify([...rodizioSalvo].sort()))}
             className={gwMsg === 'ok' ? 'is-ok' : ''}
           >
             {gwBusy ? 'Salvando…' : gwMsg === 'ok' ? 'Salvo!' : 'Salvar'}
@@ -865,11 +909,39 @@ export default function AdminConfig() {
         </div>
         {gwMsg && gwMsg !== 'ok' && <p className="cfg-warn">{gwMsg}</p>}
         <p className="usr-muted">
-          Em uso agora: <strong>{gatewaySalvo === 'payforge' ? 'PayForge' : 'Pagar.me'}</strong>
+          Em uso agora: <strong>{nomeGw(gatewaySalvo)}</strong>
+          {gatewaySalvo === 'umbrella' && (umKeySalvo ? ' · API Key ✓' : ' · falta a API Key')}
           {gatewaySalvo === 'payforge' && (pfSecretSalvo ? ' · chave secreta ✓' : ' · falta a chave secreta')}
           {gatewaySalvo === 'pagarme' && (pgSecretSalvo ? ' · chave secreta ✓ (/admin)' : ' · veja o status abaixo (env da Vercel)')}
         </p>
 
+        {gateway === 'umbrella' && (
+          <>
+            <p className="usr-muted">
+              <strong>Testar conexão</strong> — usa a chave <em>salva</em> (salve antes):
+            </p>
+            <div className="cfg-copy">
+              <button onClick={testarUmbrella} disabled={umTestBusy}>
+                {umTestBusy ? 'Testando…' : 'Testar conexão Umbrella'}
+              </button>
+            </div>
+            {umTest && (
+              <p className={umTest.ok ? 'usr-muted' : 'cfg-warn'}>
+                {umTest.ok ? '✅ ' : '⚠️ '}{umTest.message}
+              </p>
+            )}
+            <p className="usr-muted">
+              Não precisa cadastrar webhook no painel da Umbrella: o site envia esta URL automaticamente em cada
+              cobrança (exige <code>PUBLIC_SITE_URL</code> configurada no Render):
+            </p>
+            <div className="cfg-copy">
+              <input readOnly value={umbrellaWebhookUrl} onFocus={(e) => e.target.select()} />
+              <button className={copied === 'umwh' ? 'is-ok' : ''} onClick={() => copy(umbrellaWebhookUrl, 'umwh')}>
+                {copied === 'umwh' ? 'Copiado!' : 'Copiar'}
+              </button>
+            </div>
+          </>
+        )}
         {gateway === 'payforge' && (
           <>
             <p className="usr-muted">

@@ -8,7 +8,7 @@ const onlyDigits = (v) => String(v || '').replace(/\D/g, '')
 const demoPermitido = import.meta.env?.DEV === true
 
 // Gateways suportados, em ordem canônica (define a prioridade do rodízio).
-export const GATEWAYS = ['payforge', 'pagarme']
+export const GATEWAYS = ['umbrella', 'payforge', 'pagarme']
 
 // Só os gateways suportados — evita montar caminho arbitrário em /api/<gw>/...
 const gw = (g) => (GATEWAYS.includes(g) ? g : 'pagarme')

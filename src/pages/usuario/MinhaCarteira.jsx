@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { supabase, isSupabaseConfigured } from '../../lib/supabase.js'
-import { criarPagamentoPixFailover, montarRodizio } from '../../lib/pagamentos.js'
+import { criarPagamentoPixFailover, montarRodizio, GATEWAYS } from '../../lib/pagamentos.js'
 import { getVisitorId } from '../../lib/visitante.js'
 import { formatBRL } from '../../utils/format.js'
 import { getConfig, CONFIG_KEYS } from '../../lib/config.js'
@@ -29,7 +29,7 @@ export default function MinhaCarteira() {
       getConfig(CONFIG_KEYS.gatewayRodizio),
     ])
       .then(([ativo, rodizio]) => {
-        const a = ativo === 'payforge' ? ativo : 'pagarme'
+        const a = GATEWAYS.includes(ativo) ? ativo : 'pagarme'
         setGateway(a)
         setGateways(montarRodizio(a, rodizio))
       })

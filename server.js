@@ -23,6 +23,7 @@ import visitaHandler from './api/visita.js';
 import sorteiosHandler from './api/sorteios.js';
 import adminHandler from './api/admin/[action].js';
 import payforgeHandler from './api/payforge/[action].js';
+import umbrellaHandler from './api/umbrella/[action].js';
 
 // Pagar.me handlers
 import pagarmeHealth from './api/pagarme/health.js';
@@ -51,6 +52,11 @@ app.all('/api/admin/:action', (req, res) => {
 app.all('/api/payforge/:action', (req, res) => {
   req.query = { ...req.query, action: req.params.action };
   payforgeHandler(req, res);
+});
+
+app.all('/api/umbrella/:action', (req, res) => {
+  req.query = { ...req.query, action: req.params.action };
+  umbrellaHandler(req, res);
 });
 
 // Pagar.me

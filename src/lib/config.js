@@ -29,6 +29,8 @@ export const CONFIG_KEYS = {
   payforgePublicKey: 'payforge_public_key',
   payforgeSecretKey: 'payforge_secret_key',
   payforgeWebhookKey: 'payforge_webhook_key',
+  umbrellaApiKey: 'umbrella_api_key',
+  umbrellaWebhookKey: 'umbrella_webhook_key',
   // Pagar.me também configurável pelo /admin (antes só via env na Vercel).
   // Terminam em '_key' de propósito: a RLS oculta dos visitantes (igual às outras gates).
   pagarmeSecretKey: 'pagarme_secret_key',

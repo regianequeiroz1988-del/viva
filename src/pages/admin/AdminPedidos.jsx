@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase.js'
 import { getConfig, CONFIG_KEYS } from '../../lib/config.js'
-import { criarPagamentoPixFailover, montarRodizio } from '../../lib/pagamentos.js'
+import { criarPagamentoPixFailover, montarRodizio, GATEWAYS } from '../../lib/pagamentos.js'
 import {
   DEFAULT_WHATSAPP_COBRANCA_MESSAGE,
   avaliarCobrancaWhatsapp,
@@ -470,7 +470,7 @@ export default function AdminPedidos() {
         esperaMinutos: Math.max(0, Number(esperaMinutos) || 0),
         mensagem: normalizarTemplateCobrancaWhatsapp(mensagem || DEFAULT_WHATSAPP_COBRANCA_MESSAGE),
       })
-      const gatewayPrincipal = gatewayAtivo === 'payforge' ? gatewayAtivo : 'pagarme'
+      const gatewayPrincipal = GATEWAYS.includes(gatewayAtivo) ? gatewayAtivo : 'pagarme'
       setGateways(montarRodizio(gatewayPrincipal, gatewayRodizio))
     }).catch(() => {})
 

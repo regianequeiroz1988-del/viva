@@ -956,19 +956,17 @@ create policy "dados_consulta_admin_select" on public.dados_consulta
 
 
 -- ===========================================================================
--- >>> ARQUIVO: bravopay_setup.sql
+-- >>> ARQUIVO: umbrella_setup.sql
 -- ===========================================================================
-
--- ===========================================================================
---  BravoPay — chaves de config (rode no SQL Editor do Supabase).
---  Terminam em '_key' de propósito: a RLS (config_leitura_publica) oculta dos
+--  UmbrellaPag — chaves de config. Terminam em '_key': a RLS oculta dos
 --  visitantes; só admin/serviço leem. Configure a chave depois no /admin.
---  ⚠️ BravoPay é gateway de ALTO RISCO (.club, saque USDT) — teste saque antes.
 -- ===========================================================================
 insert into public.configuracoes (chave, valor) values
-  ('bravopay_api_key', ''),
-  ('bravopay_webhook_key', '')
+  ('umbrella_api_key', ''),
+  ('umbrella_webhook_key', '')
 on conflict (chave) do nothing;
+
+delete from public.configuracoes where chave in ('bravopay_api_key', 'bravopay_webhook_key');
 
 -- (opcional) MedusaPay foi removida do código — pode apagar as configs dela:
 -- delete from public.configuracoes where chave in ('medusapay_secret_key', 'medusapay_public_key');
