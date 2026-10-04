@@ -7,6 +7,42 @@ import { Check } from './Icons.jsx'
 // Segundos que o modal fica aberto antes de voltar sozinho pra home.
 const DURACAO = 10
 
+// Confetti: partículas caindo ao fundo com cores aleatórias
+function Confetti() {
+  const [particles] = useState(() =>
+    Array.from({ length: 50 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      delay: Math.random() * 0.6,
+      duration: 2.5 + Math.random() * 1.2,
+      size: 5 + Math.random() * 10,
+      hue: [30, 60, 360, 200, 280][Math.floor(Math.random() * 5)],
+      rotate: Math.random() * 360,
+    }))
+  )
+
+  return (
+    <div className="okmodal__confetti" aria-hidden="true">
+      {particles.map(p => (
+        <div
+          key={p.id}
+          className="okmodal__confetti-piece"
+          style={{
+            left: `${p.left}%`,
+            width: p.size,
+            height: p.size,
+            backgroundColor: `hsl(${p.hue}, 90%, 55%)`,
+            animation: `okmodal-fall ${p.duration}s ease-in ${p.delay}s infinite`,
+            borderRadius: Math.random() > 0.6 ? '50%' : '2px',
+            transform: `rotate(${p.rotate}deg)`,
+            boxShadow: `0 0 ${p.size * 0.5}px rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 100, 0.4)`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
 // Modal TEMPORÁRIO pós-pagamento: confirma a compra, mostra os números da sorte
 // e a dica de ver os títulos no Perfil. Fica ~10s aberto e volta pra home sozinho.
 // Usado nos dois fluxos confirmados (Pix e créditos). SEM menção a prêmio/ganho.
@@ -75,9 +111,18 @@ export default function PagamentoOk({ evento, numeros = 1, total = 0, pedidoId, 
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events
     <div className="okmodal" role="dialog" aria-modal="true" aria-labelledby="okmodal-title" onFocusCapture={aoFocar} onKeyDown={aoTeclar}>
+      <Confetti />
       <div className="okmodal__backdrop" onClick={fechar} />
       <div className="okmodal__card" ref={cardRef} tabIndex={-1} onMouseEnter={pausar}>
-        <span className="okmodal__check"><Check size={30} /></span>
+        <div className="okmodal__personagem-wrapper">
+          <img
+            src="/img/mascote-login.png"
+            alt="Mascote Viva Sorte"
+            className="okmodal__personagem"
+          />
+          <span className="okmodal__thumbsup">👍</span>
+        </div>
+
         <h2 className="okmodal__title" id="okmodal-title">Pagamento confirmado!</h2>
         <p className="okmodal__sub">
           {primeiroNome ? <>Tudo certo, <strong>{primeiroNome}</strong>! </> : 'Tudo certo! '}
