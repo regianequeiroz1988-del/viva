@@ -19,6 +19,16 @@ const METODOS = [
   { id: 'picpay', nome: 'PicPay', desc: 'Indisponível no momento' },
 ]
 
+const soDigitos = (v) => String(v || '').replace(/\D/g, '')
+const telefoneValido = (v) => /^[1-9]{2}9?\d{8}$/.test(soDigitos(v))
+function mascaraTelefone(v) {
+  const d = soDigitos(v).slice(0, 11)
+  if (d.length <= 2) return d ? `(${d}` : ''
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
+}
+
 function MetodoIcon({ id }) {
   return <span className={`mpay__glyph mpay__glyph--${id}`} aria-hidden="true" />
 }
@@ -38,6 +48,10 @@ export default function Checkout() {
   const [view, setView] = useState('carrinho') // 'carrinho' | 'pix'
   const [metodo, setMetodo] = useState('pix')
   const [modal, setModal] = useState(false)
+  const [telModal, setTelModal] = useState(false)
+  const [telValor, setTelValor] = useState('')
+  const [telErro, setTelErro] = useState('')
+  const [telBusy, setTelBusy] = useState(false)
   const [aceito, setAceito] = useState(true)
   const [extra, setExtra] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -208,7 +222,30 @@ export default function Checkout() {
     setBusy(false)
   }
 
-  const pagar = async () => {
+  const salvarTelefone = async (e) => {
+    e.preventDefault()
+    setTelErro('')
+    if (!telefoneValido(telValor)) {
+      setTelErro('Digite um telefone válido com DDD, ex.: (11) 98765-4321.')
+      return
+    }
+    setTelBusy(true)
+    try {
+      if (isSupabaseConfigured && user?.id) {
+        const { error } = await supabase.from('profiles').update({ telefone: soDigitos(telValor) }).eq('id', user.id)
+        if (error) throw error
+        await refreshProfile()
+      }
+      setTelModal(false)
+      setTelBusy(false)
+      pagar({ telefoneOk: true })
+    } catch {
+      setTelErro('Não foi possível salvar o telefone. Tente novamente.')
+      setTelBusy(false)
+    }
+  }
+
+  const pagar = async ({ telefoneOk = false } = {}) => {
     setErro('')
     if (items.length === 0) return
     if (!aceito) {
@@ -225,6 +262,12 @@ export default function Checkout() {
     }
     if (metodo === 'creditos') {
       await pagarComCreditos()
+      return
+    }
+    if (!telefoneOk && !telefoneValido(user?.telefone)) {
+      setTelValor(mascaraTelefone(user?.telefone))
+      setTelErro('')
+      setTelModal(true)
       return
     }
     // PayForge exige no mínimo R$ 5,00 por transação.
@@ -446,13 +489,38 @@ export default function Checkout() {
 
               {erro && <p className="ck-erro">{erro}</p>}
 
-              <button className="ck-pagar" onClick={pagar} disabled={busy}>
+              <button className="ck-pagar" onClick={() => pagar()} disabled={busy}>
                 {busy ? 'Gerando pagamento…' : <>Pagar <ChevronRight size={18} /></>}
               </button>
             </aside>
           </div>
         )}
       </div>
+
+      {telModal && (
+        <div className="mpay" role="dialog" aria-modal="true" aria-labelledby="tel-titulo" onClick={() => !telBusy && setTelModal(false)}>
+          <form className="mpay__box ck-tel" onClick={(e) => e.stopPropagation()} onSubmit={salvarTelefone}>
+            <h2 id="tel-titulo">Qual é o seu telefone?</h2>
+            <p>Precisamos do seu celular com DDD para gerar o Pix e avisar se você for sorteado.</p>
+            <input
+              type="tel"
+              inputMode="numeric"
+              autoComplete="tel-national"
+              placeholder="(11) 98765-4321"
+              value={telValor}
+              onChange={(e) => setTelValor(mascaraTelefone(e.target.value))}
+              autoFocus
+            />
+            {telErro && <p className="ck-erro">{telErro}</p>}
+            <button type="submit" className="ck-pagar" disabled={telBusy}>
+              {telBusy ? 'Salvando…' : <>Continuar para o Pix <ChevronRight size={18} /></>}
+            </button>
+            <button type="button" className="ck-tel__cancelar" onClick={() => setTelModal(false)} disabled={telBusy}>
+              Cancelar
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* Modal de seleção de método de pagamento */}
       {modal && (

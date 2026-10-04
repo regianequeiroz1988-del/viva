@@ -1552,6 +1552,12 @@ ul { list-style: none; }
 /* Modal método de pagamento */
 .mpay { position: fixed; inset: 0; z-index: 200; background: rgba(20, 28, 70, 0.45); display: flex; align-items: center; justify-content: center; padding: 20px; }
 .mpay__box { width: 100%; max-width: 720px; background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); padding: 16px; }
+.ck-tel { max-width: 420px; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+.ck-tel h2 { font-size: 1.25rem; color: var(--text); margin: 0; }
+.ck-tel p { margin: 0; color: var(--muted, #5b6386); font-size: 0.95rem; }
+.ck-tel input { width: 100%; box-sizing: border-box; padding: 14px 16px; font-size: 1.1rem; border: 1px solid var(--border); border-radius: 12px; }
+.ck-tel input:focus { outline: none; border-color: var(--blue); }
+.ck-tel__cancelar { background: none; border: none; color: var(--muted, #5b6386); font-size: 0.9rem; cursor: pointer; padding: 4px; }
 .mpay__back { font-size: 1.5rem; color: var(--text); padding: 4px 10px; margin-bottom: 6px; }
 .mpay__list { display: flex; flex-direction: column; gap: 10px; }
 .mpay__opt { width: 100%; display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); }
