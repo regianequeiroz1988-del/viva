@@ -92,13 +92,15 @@ const numerosLabel = (numeros) => {
 
 // TODOS os perfis (paginado) — usado tanto pra montar o mapa de nomes/consulta
 // quanto pra achar quem se cadastrou mas NUNCA gerou pedido ("Somente Cadastros").
-async function fetchAllProfiles() {
+const CAMPOS_PERFIL = 'id,nome,cpf,email,telefone,is_admin,created_at,exportado_cadastro,exportado_cadastro_at,ligador_id,ligador_status,ligador_obs,ligador_at'
+
+async function fetchAllProfiles(campos = `${CAMPOS_PERFIL},gerente_id`) {
   const perfis = []
   const tamanhoPagina = 1000
   for (let inicio = 0; ; inicio += tamanhoPagina) {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id,nome,cpf,email,telefone,is_admin,created_at,exportado_cadastro,exportado_cadastro_at,ligador_id,ligador_status,ligador_obs,ligador_at')
+      .select(campos)
       .order('created_at', { ascending: false })
       .range(inicio, inicio + tamanhoPagina - 1)
     if (error) throw error
@@ -384,7 +386,8 @@ export default function AdminPedidos() {
   const [qtdSelecionar, setQtdSelecionar] = useState('')
   const [processando, setProcessando] = useState(false)
   const [ligadores, setLigadores] = useState([]) // [{ id, usuario, nome, ... }]
-  const [ligadorSel, setLigadorSel] = useState('') // id do ligador no seletor
+  const [ligadorSel, setLigadorSel] = useState('') // id do ligador, ou 'g:<id>' de gerente
+  const [gerentes, setGerentes] = useState([])
   const [whatsappConfig, setWhatsappConfig] = useState(WHATSAPP_CONFIG_INICIAL)
   const [whatsappProcessando, setWhatsappProcessando] = useState('')
   const [gateways, setGateways] = useState(['pagarme'])
@@ -420,6 +423,11 @@ export default function AdminPedidos() {
         perfis = await fetchAllProfiles()
       } catch {
         try {
+          perfis = await fetchAllProfiles(CAMPOS_PERFIL) // gerentes_setup.sql ainda não rodado
+        } catch { /* tenta o mínimo abaixo */ }
+      }
+      if (!perfis.length) {
+        try {
           perfis = await (async () => {
             const out = []
             const size = 1000
@@ -454,6 +462,7 @@ export default function AdminPedidos() {
     })()
     // Lista de ligadores (p/ o seletor "Enviar pro ligador" + mostrar o nome na aba).
     supabase.rpc('listar_ligadores').then(({ data }) => { if (active) setLigadores(data || []) }).catch(() => {})
+    supabase.rpc('listar_gerentes').then(({ data }) => { if (active) setGerentes(data || []) }).catch(() => {})
 
     Promise.all([
       getConfig(CONFIG_KEYS.whatsappCobrancaAtivo),
@@ -486,11 +495,12 @@ export default function AdminPedidos() {
   }
 
   const consolidados = useMemo(() => consolidarPedidosPorCliente(rows || [], nomes), [rows, nomes])
+  const enviado = (r) => Boolean(r.ligador_id || r.gerente_id)
 
   // Abas de cadastro-só (perfis sem nenhum pedido) — some da lista quando vai pro
   // ligador (mesma regra dos pedidos). Filtro/busca reaproveitam nome/cpf/telefone.
   const cadFiltrados = useMemo(() => {
-    let list = (cadastros || []).filter((p) => !p.ligador_id && Boolean(p.exportado_cadastro) === (aba === 'cadexp'))
+    let list = (cadastros || []).filter((p) => !enviado(p) && Boolean(p.exportado_cadastro) === (aba === 'cadexp'))
     const q = busca.trim().toLowerCase()
     const qd = onlyDigits(busca)
     if (q) {
@@ -507,7 +517,7 @@ export default function AdminPedidos() {
   // Cadastros-só já enviados ao ligador — aparecem junto com os pedidos na aba
   // "Enviados ao ligador" (marcados com _kind pra escolher o layout do card certo).
   const ligCadastros = useMemo(() => {
-    let list = (cadastros || []).filter((p) => p.ligador_id).map((p) => ({ ...p, _kind: 'cadastro' }))
+    let list = (cadastros || []).filter(enviado).map((p) => ({ ...p, _kind: 'cadastro' }))
     const q = busca.trim().toLowerCase()
     const qd = onlyDigits(busca)
     if (q) {
@@ -526,8 +536,8 @@ export default function AdminPedidos() {
     let list = consolidados
     // Abas: 'lig' = atribuídos a um ligador; 'exp' = exportados (sem ligador);
     // 'nao' = caixa de entrada (sem ligador e não exportados).
-    if (aba === 'lig') list = list.filter((r) => r.ligador_id)
-    else list = list.filter((r) => !r.ligador_id && Boolean(r.exportado) === (aba === 'exp'))
+    if (aba === 'lig') list = list.filter(enviado)
+    else list = list.filter((r) => !enviado(r) && Boolean(r.exportado) === (aba === 'exp'))
     if (filtro !== 'todos') {
       list = list.filter((r) => (filtro === 'pago' ? r.status === 'pago' : r.status !== 'pago'))
     }
@@ -544,18 +554,24 @@ export default function AdminPedidos() {
     return list
   }, [consolidados, aba, filtro, busca, nomes, cadFiltrados, ligCadastros])
 
-  const naoCount = useMemo(() => consolidados.filter((r) => !r.exportado && !r.ligador_id).length, [consolidados])
-  const expCount = useMemo(() => consolidados.filter((r) => r.exportado && !r.ligador_id).length, [consolidados])
+  const naoCount = useMemo(() => consolidados.filter((r) => !r.exportado && !enviado(r)).length, [consolidados])
+  const expCount = useMemo(() => consolidados.filter((r) => r.exportado && !enviado(r)).length, [consolidados])
   const ligCount = useMemo(
-    () => consolidados.filter((r) => r.ligador_id).length + (cadastros || []).filter((p) => p.ligador_id).length,
+    () => consolidados.filter(enviado).length + (cadastros || []).filter(enviado).length,
     [consolidados, cadastros]
   )
-  const cadCount = useMemo(() => (cadastros || []).filter((p) => !p.ligador_id && !p.exportado_cadastro).length, [cadastros])
-  const cadExpCount = useMemo(() => (cadastros || []).filter((p) => !p.ligador_id && p.exportado_cadastro).length, [cadastros])
+  const cadCount = useMemo(() => (cadastros || []).filter((p) => !enviado(p) && !p.exportado_cadastro).length, [cadastros])
+  const cadExpCount = useMemo(() => (cadastros || []).filter((p) => !enviado(p) && p.exportado_cadastro).length, [cadastros])
 
   const ligadorNome = (id) => {
     const l = ligadores.find((x) => x.id === id)
     return l ? (l.nome || l.usuario) : '—'
+  }
+  const destinoNome = (r) => {
+    const lig = r.ligador_id
+    if (lig) return ligadorNome(lig)
+    const g = gerentes.find((x) => x.id === r.gerente_id)
+    return g ? `Gerente ${g.nome || g.usuario} (no estoque)` : '—'
   }
   const ligResultado = (s) => (s === 'bom' ? '👍 Deu bom' : s === 'ruim' ? '👎 Deu ruim' : s === 'retorno' ? '↻ Retornar' : 'A ligar')
 
@@ -864,19 +880,33 @@ export default function AdminPedidos() {
     }
   }
 
-  // Atribui pedidos a um ligador (sai da lista → aba "Enviados ao ligador").
-  const atribuirLigador = async (ids, ligadorId) => {
-    if (!ids.length || !ligadorId) return
+  // destino = id do ligador, ou 'g:<id>' pro estoque do gerente (ele repassa aos ligadores dele).
+  const patchDestino = (destino) => {
+    if (String(destino).startsWith('g:')) {
+      return { gerente_id: destino.slice(2), ligador_id: null, ligador_status: null, ligador_obs: null, ligador_at: null, ligador_liberado_at: null }
+    }
+    return { ligador_id: destino, ligador_status: 'a_ligar', ligador_obs: null, ligador_at: null, ligador_liberado_at: null }
+  }
+  // Pedido de fichas do gerente em aberto fica atendido quando o admin envia.
+  const avisarGerente = (destino) => {
+    if (String(destino).startsWith('g:')) supabase.rpc('atender_solicitacoes_gerente', { p_gerente: destino.slice(2) }).then(() => {}, () => {})
+  }
+
+  // Atribui pedidos a um ligador ou gerente (sai da lista → aba "Enviados").
+  const atribuirLigador = async (ids, destino) => {
+    if (!ids.length || !destino) return
     setProcessando(true)
     setErro('')
+    const patch = patchDestino(destino)
     const { error } = await supabase
       .from('pedidos')
-      .update({ ligador_id: ligadorId, ligador_status: 'a_ligar', ligador_obs: null, ligador_at: null, ligador_liberado_at: null })
+      .update(patch)
       .in('id', ids)
     setProcessando(false)
-    if (error) { setErro(`Não foi possível enviar pro ligador: ${error.message}`); return }
+    if (error) { setErro(`Não foi possível enviar: ${error.message}`); return }
+    avisarGerente(destino)
     const idset = new Set(ids)
-    setRows((prev) => (prev || []).map((r) => (idset.has(r.id) ? { ...r, ligador_id: ligadorId, ligador_status: 'a_ligar', ligador_obs: null } : r)))
+    setRows((prev) => (prev || []).map((r) => (idset.has(r.id) ? { ...r, ...patch } : r)))
     setSelecionados(new Set())
     setLigadorSel('')
     setSel(null)
@@ -889,29 +919,31 @@ export default function AdminPedidos() {
     setErro('')
     const { error } = await supabase
       .from('pedidos')
-      .update({ ligador_id: null, ligador_status: null, ligador_obs: null, ligador_at: null, ligador_liberado_at: null })
+      .update({ ligador_id: null, gerente_id: null, ligador_status: null, ligador_obs: null, ligador_at: null, ligador_liberado_at: null })
       .in('id', ids)
     setProcessando(false)
     if (error) { setErro(error.message); return }
     const idset = new Set(ids)
-    setRows((prev) => (prev || []).map((r) => (idset.has(r.id) ? { ...r, ligador_id: null, ligador_status: null, ligador_obs: null } : r)))
+    setRows((prev) => (prev || []).map((r) => (idset.has(r.id) ? { ...r, ligador_id: null, gerente_id: null, ligador_status: null, ligador_obs: null } : r)))
     setSelecionados(new Set())
     setSel(null)
   }
 
   // Atribui cadastros-só a um ligador (sai de "Somente Cadastros" → "Enviados ao ligador").
-  const atribuirLigadorCadastro = async (ids, ligadorId) => {
-    if (!ids.length || !ligadorId) return
+  const atribuirLigadorCadastro = async (ids, destino) => {
+    if (!ids.length || !destino) return
     setProcessando(true)
     setErro('')
+    const patch = patchDestino(destino)
     const { error } = await supabase
       .from('profiles')
-      .update({ ligador_id: ligadorId, ligador_status: 'a_ligar', ligador_obs: null, ligador_at: null, ligador_liberado_at: null })
+      .update(patch)
       .in('id', ids)
     setProcessando(false)
-    if (error) { setErro(`Não foi possível enviar pro ligador: ${error.message}`); return }
+    if (error) { setErro(`Não foi possível enviar: ${error.message}`); return }
+    avisarGerente(destino)
     const idset = new Set(ids)
-    setCadastros((prev) => (prev || []).map((p) => (idset.has(p.id) ? { ...p, ligador_id: ligadorId, ligador_status: 'a_ligar', ligador_obs: null } : p)))
+    setCadastros((prev) => (prev || []).map((p) => (idset.has(p.id) ? { ...p, ...patch } : p)))
     setSelecionados(new Set())
     setLigadorSel('')
     setSel(null)
@@ -924,12 +956,12 @@ export default function AdminPedidos() {
     setErro('')
     const { error } = await supabase
       .from('profiles')
-      .update({ ligador_id: null, ligador_status: null, ligador_obs: null, ligador_at: null, ligador_liberado_at: null })
+      .update({ ligador_id: null, gerente_id: null, ligador_status: null, ligador_obs: null, ligador_at: null, ligador_liberado_at: null })
       .in('id', ids)
     setProcessando(false)
     if (error) { setErro(error.message); return }
     const idset = new Set(ids)
-    setCadastros((prev) => (prev || []).map((p) => (idset.has(p.id) ? { ...p, ligador_id: null, ligador_status: null, ligador_obs: null } : p)))
+    setCadastros((prev) => (prev || []).map((p) => (idset.has(p.id) ? { ...p, ligador_id: null, gerente_id: null, ligador_status: null, ligador_obs: null } : p)))
     setSelecionados(new Set())
     setSel(null)
   }
@@ -964,7 +996,7 @@ export default function AdminPedidos() {
           Pedidos Exportados {rows && <span className="adm__tab-badge">{expCount}</span>}
         </button>
         <button className={`adm__tab ${aba === 'lig' ? 'is-active' : ''}`} onClick={() => trocarAba('lig')} role="tab" aria-selected={aba === 'lig'}>
-          Enviados ao ligador {rows && <span className="adm__tab-badge">{ligCount}</span>}
+          Enviados {rows && <span className="adm__tab-badge">{ligCount}</span>}
         </button>
         <button className={`adm__tab ${aba === 'cad' ? 'is-active' : ''}`} onClick={() => trocarAba('cad')} role="tab" aria-selected={aba === 'cad'}>
           Somente Cadastros {cadastros && <span className="adm__tab-badge">{cadCount}</span>}
@@ -1033,12 +1065,21 @@ export default function AdminPedidos() {
                 <button className="adm__btn adm__btn--primary" onClick={exportarSelecionados} disabled={processando}>
                   <Download size={16} /> Exportar selecionados
                 </button>
-                <select className="adm__ligsel" value={ligadorSel} onChange={(e) => setLigadorSel(e.target.value)} disabled={!ligadores.length}>
-                  <option value="">{ligadores.length ? 'Escolher ligador…' : 'Nenhum ligador'}</option>
-                  {ligadores.map((l) => <option key={l.id} value={l.id}>{l.nome || l.usuario}</option>)}
+                <select className="adm__ligsel" value={ligadorSel} onChange={(e) => setLigadorSel(e.target.value)} disabled={!ligadores.length && !gerentes.length}>
+                  <option value="">{ligadores.length || gerentes.length ? 'Enviar para…' : 'Nenhum ligador'}</option>
+                  {ligadores.length > 0 && (
+                    <optgroup label="Ligadores">
+                      {ligadores.map((l) => <option key={l.id} value={l.id}>{l.nome || l.usuario}</option>)}
+                    </optgroup>
+                  )}
+                  {gerentes.length > 0 && (
+                    <optgroup label="Gerentes (estoque dele)">
+                      {gerentes.map((g) => <option key={g.id} value={`g:${g.id}`}>{g.nome || g.usuario}</option>)}
+                    </optgroup>
+                  )}
                 </select>
                 <button className="adm__btn" onClick={() => atribuirLigador([...selecionados], ligadorSel)} disabled={processando || !ligadorSel}>
-                  <Phone size={15} /> Enviar pro ligador
+                  <Phone size={15} /> Enviar
                 </button>
               </>
             )}
@@ -1058,7 +1099,7 @@ export default function AdminPedidos() {
                   <Download size={16} /> Baixar .txt
                 </button>
                 <button className="adm__btn adm__btn--ghost" onClick={() => desatribuirMisto([...selecionados])} disabled={processando}>
-                  Tirar do ligador
+                  Tirar do ligador/gerente
                 </button>
               </>
             )}
@@ -1067,12 +1108,21 @@ export default function AdminPedidos() {
                 <button className="adm__btn adm__btn--primary" onClick={exportarSelecionadosCadastro} disabled={processando}>
                   <Download size={16} /> Exportar selecionados
                 </button>
-                <select className="adm__ligsel" value={ligadorSel} onChange={(e) => setLigadorSel(e.target.value)} disabled={!ligadores.length}>
-                  <option value="">{ligadores.length ? 'Escolher ligador…' : 'Nenhum ligador'}</option>
-                  {ligadores.map((l) => <option key={l.id} value={l.id}>{l.nome || l.usuario}</option>)}
+                <select className="adm__ligsel" value={ligadorSel} onChange={(e) => setLigadorSel(e.target.value)} disabled={!ligadores.length && !gerentes.length}>
+                  <option value="">{ligadores.length || gerentes.length ? 'Enviar para…' : 'Nenhum ligador'}</option>
+                  {ligadores.length > 0 && (
+                    <optgroup label="Ligadores">
+                      {ligadores.map((l) => <option key={l.id} value={l.id}>{l.nome || l.usuario}</option>)}
+                    </optgroup>
+                  )}
+                  {gerentes.length > 0 && (
+                    <optgroup label="Gerentes (estoque dele)">
+                      {gerentes.map((g) => <option key={g.id} value={`g:${g.id}`}>{g.nome || g.usuario}</option>)}
+                    </optgroup>
+                  )}
                 </select>
                 <button className="adm__btn" onClick={() => atribuirLigadorCadastro([...selecionados], ligadorSel)} disabled={processando || !ligadorSel}>
-                  <Phone size={15} /> Enviar pro ligador
+                  <Phone size={15} /> Enviar
                 </button>
               </>
             )}
@@ -1165,7 +1215,7 @@ export default function AdminPedidos() {
                     <dt>CPF</dt><dd>{r.cpf ? maskCpf(r.cpf) : '—'}</dd>
                     <dt>Telefone</dt><dd>{r.telefone ? maskTelefone(r.telefone) : '—'}</dd>
                     <dt>Idade</dt><dd>{c.idade != null && c.idade !== '' ? c.idade : '—'}</dd>
-                    <dt>Ligador</dt><dd>{ligadorNome(r.ligador_id)}</dd>
+                    <dt>Ligador</dt><dd>{destinoNome(r)}</dd>
                     <dt>Resultado</dt><dd>{ligResultado(r.ligador_status)}</dd>
                   </dl>
                   {r.ligador_obs && <p className="adm__pcard-obs">“{r.ligador_obs}”</p>}
@@ -1210,7 +1260,7 @@ export default function AdminPedidos() {
                   <dt>Data</dt><dd>{dataCurta(r.created_at)}</dd>
                   {aba === 'lig' && (
                     <>
-                      <dt>Ligador</dt><dd>{ligadorNome(r.ligador_id)}</dd>
+                      <dt>Ligador</dt><dd>{destinoNome(r)}</dd>
                       <dt>Resultado</dt><dd>{ligResultado(r.ligador_status)}</dd>
                     </>
                   )}

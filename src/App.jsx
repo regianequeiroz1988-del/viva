@@ -41,6 +41,10 @@ import AdminNotificacoes from './pages/admin/AdminNotificacoes.jsx'
 import LigadorLogin from './pages/ligador/LigadorLogin.jsx'
 import LigadorPainel from './pages/ligador/LigadorPainel.jsx'
 import RequireLigador from './components/RequireLigador.jsx'
+import GerenteLogin from './pages/gerente/GerenteLogin.jsx'
+import GerentePainel from './pages/gerente/GerentePainel.jsx'
+import RequireGerente from './components/RequireGerente.jsx'
+import AdminGerentes from './pages/admin/AdminGerentes.jsx'
 import AgeGate from './components/AgeGate.jsx'
 import { MetaPixelRouteTracker } from './lib/metapixel.js'
 import { iniciarGoogleTag } from './lib/googletag.js'
@@ -56,8 +60,8 @@ function ScrollToTop() {
 export default function App() {
   const { pathname } = useLocation()
   const headerBare = pathname === '/ganhador' // /ganhador: header sem login nem menu
-  // tela cheia (sem header/footer/barra-inferior do site): admin, ligador e /ganhador
-  const noChrome = pathname.startsWith('/admin') || pathname.startsWith('/ligador')
+  // tela cheia (sem header/footer/barra-inferior do site): admin, ligador, gerente e /ganhador
+  const noChrome = pathname.startsWith('/admin') || pathname.startsWith('/ligador') || pathname.startsWith('/gerente')
   const noFooter = noChrome || headerBare // /ganhador mantém só o logo, sem rodapé/barra-inferior
 
   useEffect(() => { iniciarGoogleTag() }, [])
@@ -109,6 +113,7 @@ export default function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="pedidos" element={<AdminPedidos />} />
           <Route path="ligadores" element={<AdminLigadores />} />
+          <Route path="gerentes" element={<AdminGerentes />} />
           <Route path="resumo" element={<AdminResumo />} />
           <Route path="transmissoes" element={<AdminTransmissoes />} />
           <Route path="notificacoes" element={<AdminNotificacoes />} />
@@ -120,6 +125,8 @@ export default function App() {
         {/* Área do ligador (call center) — login próprio usuário+senha */}
         <Route path="/ligador/entrar" element={<LigadorLogin />} />
         <Route path="/ligador" element={<RequireLigador><LigadorPainel /></RequireLigador>} />
+        <Route path="/gerente/entrar" element={<GerenteLogin />} />
+        <Route path="/gerente" element={<RequireGerente><GerentePainel /></RequireGerente>} />
 
         <Route path="*" element={<Placeholder />} />
       </Routes>

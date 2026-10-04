@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase.js'
 
 const fmtHora = (iso) => {
@@ -51,11 +52,44 @@ function Solicitacao({ s, onFeito }) {
   )
 }
 
+function SolicitacaoGerente({ s, onFeito }) {
+  const navigate = useNavigate()
+  const [busy, setBusy] = useState(false)
+  const [erro, setErro] = useState('')
+
+  const responder = async (status) => {
+    setBusy(true)
+    setErro('')
+    const { error } = await supabase.rpc('responder_solicitacao_gerente', { p_solicitacao: s.id, p_status: status })
+    setBusy(false)
+    if (error) setErro(error.message)
+    else onFeito()
+  }
+
+  return (
+    <div className="ntf__item">
+      <div className="ntf__txt">
+        <strong>Gerente {s.gerente_nome || ''} quer mais fichas{s.quantidade ? ` (${s.quantidade})` : ''}</strong>
+        <span>{fmtHora(s.created_at)} · {s.estoque} ficha(s) ainda com ele</span>
+      </div>
+      <div className="ntf__acoes">
+        <button type="button" className="ntf__ok" disabled={busy} onClick={() => navigate('/admin/pedidos')}>Enviar em Pedidos</button>
+        <button type="button" className="ntf__nao" disabled={busy} onClick={() => responder('atendida')}>Já enviei</button>
+        <button type="button" className="ntf__nao" disabled={busy} onClick={() => responder('recusada')}>Recusar</button>
+      </div>
+      {erro && <p className="cfg-warn">{erro}</p>}
+    </div>
+  )
+}
+
 export default function AdminNotificacoes() {
   const [itens, setItens] = useState(null)
+  const [gerentes, setGerentes] = useState([])
 
-  const carregar = () =>
-    supabase.rpc('listar_solicitacoes_fichas').then(({ data }) => setItens(Array.isArray(data) ? data : []))
+  const carregar = () => {
+    supabase.rpc('listar_solicitacoes_gerente').then(({ data }) => setGerentes(Array.isArray(data) ? data : []))
+    return supabase.rpc('listar_solicitacoes_fichas').then(({ data }) => setItens(Array.isArray(data) ? data : []))
+  }
 
   useEffect(() => {
     carregar()
@@ -67,9 +101,16 @@ export default function AdminNotificacoes() {
     <section>
       <header className="adm__pagehead"><div>
         <h1 className="adm__title">Notificações</h1>
-        <p className="adm__subtitle">Pedidos de mais fichas dos ligadores. Cada ligador vê no máximo 10 por vez.</p>
+        <p className="adm__subtitle">Pedidos de mais fichas. Ligadores com gerente pedem pro gerente, não aparecem aqui.</p>
       </div></header>
+      {gerentes.length > 0 && (
+        <div className="adm__panel">
+          <h2 className="adm__panel-title">Gerentes</h2>
+          {gerentes.map((s) => <SolicitacaoGerente key={s.id} s={s} onFeito={carregar} />)}
+        </div>
+      )}
       <div className="adm__panel">
+        <h2 className="adm__panel-title">Ligadores sem gerente</h2>
         {itens === null ? (
           <p className="usr-muted">Carregando…</p>
         ) : itens.length === 0 ? (

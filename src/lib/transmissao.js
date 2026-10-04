@@ -149,16 +149,17 @@ export async function iniciarTransmissaoLigador({ token, onFim, onConexao }) {
 }
 
 // ---------------------------------------------------------------------------
-// ADMIN: lista quem está online e assiste um ligador por vez.
+// ADMIN/GERENTE: lista quem está online e assiste um ligador por vez.
+// credenciais() → { role:'admin', jwt } ou { role:'gerente', token }
 // ---------------------------------------------------------------------------
-export function conectarPainelTransmissoes({ jwt, onLista, onStream, onFim, onConexao }) {
+export function conectarPainelTransmissoes({ credenciais, onLista, onStream, onFim, onConexao }) {
   let assistindo = null
   let peer = null
 
   const encerrar = () => { peer?.pc.close(); peer = null }
 
   const sock = abrirSocket(
-    async () => ({ role: 'admin', jwt: await jwt() }),
+    credenciais,
     async (m) => {
       if (m.type === 'lista') onLista(m.ligadores || [])
       else if (m.type === 'fim' && m.ligadorId === assistindo) {

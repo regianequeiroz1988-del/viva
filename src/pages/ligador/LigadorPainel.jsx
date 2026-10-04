@@ -317,7 +317,7 @@ export default function LigadorPainel() {
   useEffect(() => {
     if (!transmitindo) return
     carregar()
-    const t = setInterval(carregar, 15000) // fichas novas aparecem sozinhas quando o admin conceder
+    const t = setInterval(carregar, 15000) // fichas novas aparecem sozinhas quando o gerente/admin conceder
     return () => clearInterval(t)
   }, [transmitindo]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -402,7 +402,7 @@ export default function LigadorPainel() {
           <div className="ligp__gate">
             <h2>Você terminou suas fichas</h2>
             {situacao?.solicitacaoPendente ? (
-              <p>Pedido enviado — aguardando o admin liberar mais fichas. Elas aparecem aqui sozinhas.</p>
+              <p>Pedido enviado — aguardando a liberação de mais fichas. Elas aparecem aqui sozinhas.</p>
             ) : (
               <button className="ligp__gate-btn" onClick={pedirFichas} disabled={pedindo}>
                 {pedindo ? 'Enviando…' : 'Liberar mais fichas'}

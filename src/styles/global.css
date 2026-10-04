@@ -1718,6 +1718,15 @@ ul { list-style: none; }
 /* Card do ligador reusa o visual do card de pedido do admin (.adm__pcard) —
    só acrescenta o layout em coluna (pra encaixar o comentário + botões embaixo)
    e a borda colorida pelo resultado. */
+/* Painel do gerente (reusa .ligp, .adm__panel, .ntf__*, .trs__*) */
+.ger { display: flex; flex-direction: column; gap: 16px; }
+.ger .adm__panel { margin: 0; }
+.ger__fichas { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.ger__num { font-size: 2.6rem; font-weight: 800; color: var(--blue); line-height: 1.1; margin: 4px 0 0; }
+.ger__pedir { display: flex; gap: 8px; flex-wrap: wrap; }
+.ger__pedir input { width: 140px; height: 42px; padding: 0 12px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; }
+.ger__aguarde { max-width: 360px; background: var(--blue-light); color: var(--blue); border-radius: 12px; padding: 10px 14px; font-weight: 600; font-size: 0.88rem; }
+
 .ligc { display: flex; flex-direction: column; gap: 10px; cursor: default; }
 .ligc--bom { border-left: 4px solid #2bb24c; }
 .ligc--ruim { border-left: 4px solid #e23b4a; }

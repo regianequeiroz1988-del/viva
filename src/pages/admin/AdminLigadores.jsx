@@ -10,12 +10,22 @@ export default function AdminLigadores() {
   const [msg, setMsg] = useState('')
   const [erro, setErro] = useState('')
 
+  const [gerentes, setGerentes] = useState([])
+
   const carregar = async () => {
-    const { data, error } = await supabase.rpc('listar_ligadores')
+    const [{ data, error }, ger] = await Promise.all([supabase.rpc('listar_ligadores'), supabase.rpc('listar_gerentes')])
     if (error) setErro(error.message)
     setRows(data || [])
+    setGerentes(ger.data || [])
   }
   useEffect(() => { carregar() }, [])
+
+  const trocarGerente = async (ligadorId, gerenteId) => {
+    setErro('')
+    const { error } = await supabase.rpc('definir_gerente_ligador', { p_ligador: ligadorId, p_gerente: gerenteId || null })
+    if (error) { setErro(error.message); return }
+    carregar()
+  }
 
   const criar = async (e) => {
     e.preventDefault()
@@ -82,6 +92,10 @@ export default function AdminLigadores() {
                   <span className="lig-pill lig-pill--b">{l.bom} bom</span>
                   <span className="lig-pill lig-pill--r">{l.ruim} ruim</span>
                 </div>
+                <select className="adm__ligsel" value={l.gerente_id || ''} onChange={(e) => trocarGerente(l.id, e.target.value)} title="Gerente responsável">
+                  <option value="">Sem gerente (pede pra você)</option>
+                  {gerentes.map((g) => <option key={g.id} value={g.id}>Gerente: {g.nome || g.usuario}</option>)}
+                </select>
                 <button className="adm__btn adm__btn--ghost" onClick={() => remover(l.id, l.usuario)}>Remover</button>
               </div>
             ))}

@@ -9,6 +9,7 @@ const itens = [
   { to: '/admin/notificacoes', label: 'Notificações', icon: Bell, badge: true },
   { to: '/admin/pedidos', label: 'Pedidos', icon: Receipt },
   { to: '/admin/ligadores', label: 'Ligadores', icon: Phone },
+  { to: '/admin/gerentes', label: 'Gerentes', icon: UserIcon },
   { to: '/admin/transmissoes', label: 'Transmissões', icon: Monitor },
   { to: '/admin/resumo', label: 'Acompanhar Resumo', icon: TrendingUp },
   { to: '/admin/usuarios', label: 'Usuários', icon: UserIcon },
@@ -28,7 +29,9 @@ export default function AdminLayout() {
   // Contador de pedidos de fichas pendentes (aparece em qualquer tela do admin).
   const [notif, setNotif] = useState(0)
   useEffect(() => {
-    const ler = () => supabase.rpc('listar_solicitacoes_fichas').then(({ data }) => setNotif(Array.isArray(data) ? data.length : 0))
+    const conta = ({ data }) => (Array.isArray(data) ? data.length : 0)
+    const ler = () => Promise.all([supabase.rpc('listar_solicitacoes_fichas'), supabase.rpc('listar_solicitacoes_gerente')])
+      .then(([lig, ger]) => setNotif(conta(lig) + conta(ger)))
     ler()
     const t = setInterval(ler, 15000)
     return () => clearInterval(t)
