@@ -270,8 +270,8 @@ export default function Checkout() {
       setTelModal(true)
       return
     }
-    // PayForge exige no mínimo R$ 5,00 por transação.
-    if (gateway === 'payforge' && totalFinal < 5) {
+    // Abaixo de R$ 5,00 a taxa fixa por transação não compensa.
+    if ((gateway === 'payforge' || gateway === 'umbrella') && totalFinal < 5) {
       setErro('O valor mínimo para pagamento via Pix é R$ 5,00. Adicione mais números para continuar.')
       return
     }
