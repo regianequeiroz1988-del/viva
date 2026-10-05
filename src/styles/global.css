@@ -1725,6 +1725,23 @@ ul { list-style: none; }
 .ger__num { font-size: 2.6rem; font-weight: 800; color: var(--blue); line-height: 1.1; margin: 4px 0 0; }
 .ger__pedir { display: flex; gap: 8px; flex-wrap: wrap; }
 .ger__pedir input { width: 140px; height: 42px; padding: 0 12px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; }
+.ger__dist { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+.ger__selrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 0.88rem; }
+.ger__check { display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; }
+.ger__prim { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+.ger__prim input { width: 72px; height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; }
+.ger__lista { display: flex; flex-direction: column; gap: 6px; max-height: 440px; overflow-y: auto; padding-right: 2px; }
+.ger__ficha { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; cursor: pointer; background: var(--surface); }
+.ger__ficha:hover { border-color: #c9d3f5; }
+.ger__ficha.is-sel { border-color: var(--blue); background: var(--blue-light); }
+.ger__ficha input, .ger__check input { width: 18px; height: 18px; accent-color: var(--blue); flex: none; }
+.ger__ficha-nome { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ger__ficha-nome strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ger__ficha-nome small, .ger__ficha-info small { color: var(--muted); font-size: 0.8rem; }
+.ger__ficha-info { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex: none; }
+.ger__pill-cad { background: #eef0f7; color: var(--muted); }
+.ger__barra { position: sticky; bottom: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--blue); box-shadow: var(--shadow); }
+.ger__barra select { flex: 1; min-width: 180px; height: 40px; padding: 0 10px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; background: var(--surface); }
 .ger__aguarde { max-width: 360px; background: var(--blue-light); color: var(--blue); border-radius: 12px; padding: 10px 14px; font-weight: 600; font-size: 0.88rem; }
 
 .ligc { display: flex; flex-direction: column; gap: 10px; cursor: default; }

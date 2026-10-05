@@ -73,3 +73,13 @@ export async function pedirFichasAdmin(qtd) {
   const { error } = await rpc('gerente_solicitar_fichas', { p_qtd: qtd || 0 })
   return error ? { ok: false, error: error.message } : { ok: true }
 }
+
+// Fichas do estoque: [{ tipo: 'pago'|'pendente'|'cadastro', id, nome, telefone, cidade, uf, total, created_at }]
+export const estoqueGerente = () => lista('gerente_estoque')
+
+export async function enviarFichas(ligadorId, fichas) {
+  const pedidos = fichas.filter((f) => f.tipo !== 'cadastro').map((f) => f.id)
+  const cadastros = fichas.filter((f) => f.tipo === 'cadastro').map((f) => f.id)
+  const { data, error } = await rpc('gerente_enviar_fichas', { p_ligador: ligadorId, p_pedidos: pedidos, p_cadastros: cadastros })
+  return error ? { ok: false, error: error.message } : { ok: true, enviadas: data }
+}

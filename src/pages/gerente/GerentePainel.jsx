@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   getGerente, logoutGerente, situacaoGerente, ligadoresGerente, solicitacoesGerente,
-  concederFichas, recusarSolicitacao, pedirFichasAdmin,
+  concederFichas, recusarSolicitacao, pedirFichasAdmin, estoqueGerente,
 } from '../../lib/gerente.js'
+import DistribuirFichas from './DistribuirFichas.jsx'
 import PainelTransmissoes from '../../components/PainelTransmissoes.jsx'
 
 const fmtHora = (iso) => {
@@ -66,17 +67,19 @@ export default function GerentePainel() {
   const [situacao, setSituacao] = useState(null)
   const [ligadores, setLigadores] = useState(null)
   const [pedidos, setPedidos] = useState(null)
+  const [fichasEstoque, setFichasEstoque] = useState(null)
   const [pedindo, setPedindo] = useState(false)
   const [qtdAdmin, setQtdAdmin] = useState('')
   const [conectado, setConectado] = useState(false)
 
   const carregar = async () => {
-    const [sit, ligs, sols] = await Promise.all([situacaoGerente(), ligadoresGerente(), solicitacoesGerente()])
+    const [sit, ligs, sols, est] = await Promise.all([situacaoGerente(), ligadoresGerente(), solicitacoesGerente(), estoqueGerente()])
     // token não vale mais (gerente removido/desativado): volta pro login
     if (!sit) { logoutGerente(); navigate('/gerente/entrar', { replace: true }); return }
     setSituacao(sit)
     setLigadores(ligs)
     setPedidos(sols)
+    setFichasEstoque(est)
   }
 
   useEffect(() => {
@@ -132,6 +135,12 @@ export default function GerentePainel() {
               </button>
             </form>
           )}
+        </section>
+
+        <section className="adm__panel">
+          <h2 className="adm__panel-title">Distribuir fichas</h2>
+          <p className="usr-muted">Escolha as fichas e mande pro ligador. Ele vê até 10 por vez; o resto fica na fila dele.</p>
+          <DistribuirFichas estoque={fichasEstoque} ligadores={ligadores} onEnviado={carregar} />
         </section>
 
         <section className="adm__panel">
