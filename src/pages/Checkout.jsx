@@ -15,7 +15,6 @@ import { Plus, Minus, ChevronRight, ArrowUp, Tag, Check } from './../components/
 const METODOS = [
   { id: 'pix', nome: 'Pix', desc: 'Pague via Pix' },
   { id: 'creditos', nome: 'Créditos', desc: 'Use o saldo da sua carteira' },
-  { id: 'cartao', nome: 'Cartão de crédito', desc: 'Indisponível no momento' },
   { id: 'picpay', nome: 'PicPay', desc: 'Indisponível no momento' },
 ]
 
@@ -250,10 +249,6 @@ export default function Checkout() {
     if (items.length === 0) return
     if (!aceito) {
       setErro('Você precisa aceitar os termos e condições para continuar.')
-      return
-    }
-    if (metodo === 'cartao') {
-      setErro('O pagamento com cartão está indisponível no momento. Somente pagamento via Pix.')
       return
     }
     if (metodo === 'picpay') {
@@ -543,13 +538,6 @@ export default function Checkout() {
                 </li>
               ))}
             </ul>
-            <button
-              className="mpay__card"
-              type="button"
-              onClick={() => { setModal(false); navigate('/usuario/meus-cartoes') }}
-            >
-              Adicionar novo cartão
-            </button>
           </div>
         </div>
       )}

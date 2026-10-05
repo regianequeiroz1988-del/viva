@@ -22,7 +22,6 @@ import Placeholder from './pages/Placeholder.jsx'
 import Perfil from './pages/usuario/Perfil.jsx'
 import MinhaCarteira from './pages/usuario/MinhaCarteira.jsx'
 import MinhasContemplacoes from './pages/usuario/MinhasContemplacoes.jsx'
-import MeusCartoes from './pages/usuario/MeusCartoes.jsx'
 import MeusDados from './pages/usuario/MeusDados.jsx'
 import MeusPedidos from './pages/usuario/MeusPedidos.jsx'
 import MeusTitulos from './pages/usuario/MeusTitulos.jsx'
@@ -99,7 +98,6 @@ export default function App() {
           <Route path="/usuario/perfil" element={<Perfil />} />
           <Route path="/usuario/minha-carteira" element={<MinhaCarteira />} />
           <Route path="/usuario/minhas-contemplacoes" element={<MinhasContemplacoes />} />
-          <Route path="/usuario/meus-cartoes" element={<MeusCartoes />} />
           <Route path="/usuario/meus-dados" element={<MeusDados />} />
           <Route path="/usuario/preferencias" element={<Preferencias />} />
           <Route path="/usuario/meus-titulos" element={<MeusTitulos />} />

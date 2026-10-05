@@ -10,7 +10,6 @@ export const usuarioMenu = [
   { href: '/usuario/meus-resgates', label: 'Meus resgates' },
   { href: '/usuario/minha-carteira', label: 'Minha carteira' },
   { href: '/usuario/meus-saques', label: 'Meus saques' },
-  { href: '/usuario/meus-cartoes', label: 'Meus cartões' },
   { href: '/usuario/meus-dados', label: 'Meus dados' },
   { href: '/usuario/preferencias', label: 'Preferências' },
 ]
