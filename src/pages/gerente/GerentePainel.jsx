@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   getGerente, logoutGerente, situacaoGerente, ligadoresGerente, solicitacoesGerente,
-  concederFichas, recusarSolicitacao, pedirFichasAdmin, estoqueGerente,
+  concederFichas, recusarSolicitacao, pedirFichasAdmin, estoqueGerente, acessosGerente,
 } from '../../lib/gerente.js'
 import DistribuirFichas from './DistribuirFichas.jsx'
+import PainelAcessos from '../../components/PainelAcessos.jsx'
 import PainelTransmissoes from '../../components/PainelTransmissoes.jsx'
 
 const fmtHora = (iso) => {
@@ -71,6 +72,7 @@ export default function GerentePainel() {
   const [pedindo, setPedindo] = useState(false)
   const [qtdAdmin, setQtdAdmin] = useState('')
   const [conectado, setConectado] = useState(false)
+  const [aba, setAba] = useState('fichas')
 
   const carregar = async () => {
     const [sit, ligs, sols, est] = await Promise.all([situacaoGerente(), ligadoresGerente(), solicitacoesGerente(), estoqueGerente()])
@@ -118,7 +120,32 @@ export default function GerentePainel() {
         </div>
       </header>
 
-      <div className="ligp__wrap ger">
+      <nav className="ger__abas" role="tablist">
+        {[['fichas', 'Fichas'], ['acessos', 'Acessos'], ['transmissoes', 'Transmissões']].map(([id, label]) => (
+          <button key={id} type="button" role="tab" aria-selected={aba === id} className={aba === id ? 'is-active' : ''} onClick={() => setAba(id)}>
+            {label}
+            {id === 'fichas' && pedidos?.length > 0 && <span className="ger__abas-badge">{pedidos.length}</span>}
+          </button>
+        ))}
+      </nav>
+
+      {aba === 'acessos' && (
+        <div className="ligp__wrap ger ger--largo">
+          <PainelAcessos carregar={acessosGerente} />
+        </div>
+      )}
+
+      <div className="ligp__wrap ger" hidden={aba !== 'transmissoes'}>
+        <section className="adm__panel">
+          <h2 className="adm__panel-title">Transmissões</h2>
+          <p className="usr-muted">
+            {conectado ? 'Clique num ligador transmitindo pra assistir a tela dele (com áudio).' : 'Conectando ao servidor de transmissão…'}
+          </p>
+          <PainelTransmissoes credenciais={credenciais} carregarLigadores={ligadoresGerente} onConexao={setConectado} />
+        </section>
+      </div>
+
+      <div className="ligp__wrap ger" hidden={aba !== 'fichas'}>
         <section className="adm__panel ger__fichas">
           <div>
             <h2 className="adm__panel-title">Minhas fichas</h2>
@@ -179,14 +206,6 @@ export default function GerentePainel() {
               ))}
             </div>
           )}
-        </section>
-
-        <section className="adm__panel">
-          <h2 className="adm__panel-title">Transmissões</h2>
-          <p className="usr-muted">
-            {conectado ? 'Clique num ligador transmitindo pra assistir a tela dele (com áudio).' : 'Conectando ao servidor de transmissão…'}
-          </p>
-          <PainelTransmissoes credenciais={credenciais} carregarLigadores={ligadoresGerente} onConexao={setConectado} />
         </section>
       </div>
     </main>

@@ -83,3 +83,9 @@ export async function enviarFichas(ligadorId, fichas) {
   const { data, error } = await rpc('gerente_enviar_fichas', { p_ligador: ligadorId, p_pedidos: pedidos, p_cadastros: cadastros })
   return error ? { ok: false, error: error.message } : { ok: true, enviadas: data }
 }
+
+export async function acessosGerente(desde) {
+  const { data, error } = await rpc('gerente_acessos', { p_desde: desde })
+  if (error) throw new Error(error.message)
+  return data
+}
