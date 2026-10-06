@@ -56,7 +56,7 @@ export const solicitacoesGerente = () => lista('gerente_solicitacoes')
 export async function situacaoGerente() {
   const { data, error } = await rpc('gerente_situacao')
   const r = Array.isArray(data) ? data[0] : data
-  return error || !r ? null : { estoque: r.estoque, solicitacaoPendente: r.solicitacao_pendente }
+  return error || !r ? null : { estoque: r.estoque, solicitacaoPendente: r.solicitacao_pendente, automatico: !!r.recebe_automatico }
 }
 
 export async function concederFichas(solicitacaoId, qtd) {

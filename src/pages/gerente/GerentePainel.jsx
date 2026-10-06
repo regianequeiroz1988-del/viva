@@ -151,6 +151,7 @@ export default function GerentePainel() {
             <h2 className="adm__panel-title">Minhas fichas</h2>
             <p className="ger__num">{situacao ? estoque : '…'}</p>
             <p className="usr-muted">disponíveis pra liberar aos seus ligadores</p>
+            {situacao?.automatico && <p className="ger__auto-aviso">● Pedidos novos (pagos e pendentes) estão chegando direto pra você.</p>}
           </div>
           {situacao?.solicitacaoPendente ? (
             <p className="ger__aguarde">Pedido enviado ao admin — as fichas aparecem aqui assim que ele enviar.</p>

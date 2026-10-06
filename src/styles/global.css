@@ -1717,6 +1717,17 @@ ul { list-style: none; }
 /* Painel do gerente (reusa .ligp, .adm__panel, .ntf__*, .trs__*) */
 .ger { display: flex; flex-direction: column; gap: 16px; }
 .ger[hidden] { display: none; }
+.ger-row--auto { border-color: var(--green); background: #f3fbf5; }
+.ger-auto { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.84rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.ger-auto.is-on { color: var(--green-dark); }
+.ger-auto input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.ger-auto__trilho { position: relative; width: 38px; height: 22px; border-radius: 999px; background: #d5d9e6; transition: background 0.15s; flex: none; }
+.ger-auto__trilho span { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); transition: transform 0.15s; }
+.ger-auto.is-on .ger-auto__trilho { background: var(--green); }
+.ger-auto.is-on .ger-auto__trilho span { transform: translateX(16px); }
+.ger-auto input:focus-visible + .ger-auto__trilho { outline: 2px solid var(--blue); outline-offset: 2px; }
+.ger-auto input:disabled + .ger-auto__trilho { opacity: 0.5; }
+.ger__auto-aviso { margin-top: 8px; color: var(--green-dark); font-weight: 600; font-size: 0.85rem; }
 .ger--largo { max-width: 1240px; }
 .ger__abas { position: sticky; top: 0; z-index: 5; display: flex; justify-content: center; gap: 4px; padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--border); }
 .ger__abas button { display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; border-radius: 10px; font-weight: 700; font-size: 0.92rem; color: var(--muted); }

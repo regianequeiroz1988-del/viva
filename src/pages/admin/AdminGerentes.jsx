@@ -31,6 +31,19 @@ export default function AdminGerentes() {
     carregar()
   }
 
+  const [trocando, setTrocando] = useState(null)
+  const automatico = async (g) => {
+    const ligar = !g.recebe_automatico
+    const atual = (rows || []).find((x) => x.recebe_automatico && x.id !== g.id)
+    if (ligar && atual && !window.confirm(`Hoje as fichas novas vão para "${atual.nome || atual.usuario}". Passar para "${g.nome || g.usuario}"?`)) return
+    setErro('')
+    setTrocando(g.id)
+    const { error } = await supabase.rpc('definir_gerente_automatico', { p_gerente: g.id, p_ativo: ligar })
+    setTrocando(null)
+    if (error) { setErro(error.message); return }
+    carregar()
+  }
+
   const remover = async (id, u) => {
     if (!window.confirm(`Remover o gerente "${u}"? As fichas que estão com ele voltam pra você e os ligadores dele ficam sem gerente.`)) return
     const { error } = await supabase.rpc('remover_gerente', { p_id: id })
@@ -66,6 +79,10 @@ export default function AdminGerentes() {
 
       <div className="adm__panel">
         <h2 className="adm__panel-title">Gerentes cadastrados</h2>
+        <p className="usr-muted">
+          <strong>Receber fichas automaticamente:</strong> com o botão ligado, todo pedido novo (pendente ou pago) vai direto pro
+          estoque desse gerente. Só cadastro continua chegando pra você. Só um gerente pode estar ligado por vez.
+        </p>
         {rows === null ? (
           <p className="usr-muted">Carregando…</p>
         ) : rows.length === 0 ? (
@@ -73,12 +90,23 @@ export default function AdminGerentes() {
         ) : (
           <div className="lig-tab">
             {rows.map((g) => (
-              <div key={g.id} className="lig-row">
+              <div key={g.id} className={`lig-row ${g.recebe_automatico ? 'ger-row--auto' : ''}`}>
                 <div className="lig-row__id"><strong>{g.usuario}</strong>{g.nome ? ` · ${g.nome}` : ''}</div>
                 <div className="lig-row__stats">
                   <span className="lig-pill lig-pill--b">{g.estoque} ficha(s) com ele</span>
                   <span className="usr-muted">{g.qtd_ligadores} ligador(es)</span>
                 </div>
+                <label className={`ger-auto ${g.recebe_automatico ? 'is-on' : ''}`}>
+                  <input
+                    type="checkbox"
+                    role="switch"
+                    checked={!!g.recebe_automatico}
+                    disabled={trocando === g.id}
+                    onChange={() => automatico(g)}
+                  />
+                  <span className="ger-auto__trilho" aria-hidden="true"><span /></span>
+                  <span>{g.recebe_automatico ? 'Recebendo fichas novas' : 'Receber fichas automaticamente'}</span>
+                </label>
                 <button className="adm__btn adm__btn--ghost" onClick={() => remover(g.id, g.usuario)}>Remover</button>
               </div>
             ))}

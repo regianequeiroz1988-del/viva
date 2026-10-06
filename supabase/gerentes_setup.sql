@@ -102,6 +102,7 @@ begin
 end; $$;
 grant execute on function public.criar_gerente(text, text, text) to authenticated;
 
+drop function if exists public.listar_gerentes();
 create or replace function public.listar_gerentes()
 returns table(id uuid, usuario text, nome text, ativo boolean, created_at timestamptz,
               estoque int, qtd_ligadores bigint)
@@ -237,6 +238,7 @@ begin
 end; $$;
 grant execute on function public.gerente_login(text, text) to anon, authenticated;
 
+drop function if exists public.gerente_situacao(uuid);
 create or replace function public.gerente_situacao(p_token uuid)
 returns table(estoque int, solicitacao_pendente boolean)
 language plpgsql security definer set search_path = public as $$
