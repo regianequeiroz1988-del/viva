@@ -67,7 +67,7 @@ export default function Ganhador() {
 
       const cadastrado = !!banco // CPF já está no nosso banco?
       const nome = (banco?.nome || pegarNome(own) || '').trim()
-      const nascimento = formatarData(pegarNascimento(own))
+      const nascimento = (banco?.nascimento || formatarData(pegarNascimento(own)) || '').trim()
       // E-mail/telefone/cidade SÓ aparecem quando o CPF é cadastrado (vêm do nosso banco).
       const dados = [
         ...(nome ? [{ label: 'Nome', value: nome }] : []),

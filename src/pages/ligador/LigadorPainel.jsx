@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getLigador, logoutLigador, pedidosLigador, responderPedido, cadastrosLigador, responderCadastro, definirCodigoPremio, definirEstadoPremio, definirValorPremio, resetarPremio, situacaoFichas, solicitarFichas } from '../../lib/ligador.js'
+import { getLigador, logoutLigador, pedidosLigador, responderPedido, cadastrosLigador, responderCadastro, definirCodigoPremio, definirEstadoPremio, definirValorPremio, resetarPremio, situacaoFichas, solicitarFichas, dadosCliente, salvarDadosCliente } from '../../lib/ligador.js'
 import { iniciarTransmissaoLigador, suportaTransmissao } from '../../lib/transmissao.js'
 import { consultarPremio } from '../../lib/premioResgate.js'
 import { formatBRL } from '../../utils/format.js'
@@ -204,7 +204,73 @@ function PremioResgate({ cpf }) {
   )
 }
 
-function CardLigar({ p, onResponder }) {
+// Nome e nascimento preenchidos à mão (quando a consulta de CPF não trouxe).
+// Salvou → o cliente já vê esses dados ao entrar com o CPF.
+function DadosCliente({ cpf, onSalvo }) {
+  const [nome, setNome] = useState('')
+  const [nascimento, setNascimento] = useState('')
+  const [carregado, setCarregado] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  useEffect(() => {
+    if (!cpf) return
+    dadosCliente(cpf).then((d) => {
+      setNome(d?.nome || '')
+      setNascimento(d?.nascimento || '')
+      setCarregado(true)
+    })
+  }, [cpf])
+
+  const salvar = async () => {
+    if (!nome.trim()) { setMsg('Informe o nome.'); return }
+    setBusy(true)
+    setMsg('')
+    const r = await salvarDadosCliente(cpf, nome.trim(), nascimento)
+    setBusy(false)
+    if (r.ok) {
+      setMsg('ok')
+      setTimeout(() => setMsg(''), 2000)
+      onSalvo?.()
+    } else {
+      setMsg(r.error || 'Não foi possível salvar.')
+    }
+  }
+
+  if (!cpf) return null
+
+  return (
+    <div className="ligc__premio">
+      <strong className="ligc__premio-tit">Dados do cliente</strong>
+      <input
+        className="ligc__premio-input"
+        placeholder="Nome completo"
+        autoComplete="off"
+        maxLength={120}
+        value={nome}
+        onChange={(e) => setNome(e.target.value)}
+        disabled={!carregado}
+      />
+      <div className="ligc__premio-row">
+        <input
+          className="ligc__premio-input"
+          type="date"
+          aria-label="Data de nascimento"
+          max={new Date().toISOString().slice(0, 10)}
+          value={nascimento}
+          onChange={(e) => setNascimento(e.target.value)}
+          disabled={!carregado}
+        />
+        <button type="button" className="ligc__premio-salvar" disabled={busy || !carregado} onClick={salvar}>
+          {busy ? 'Salvando…' : msg === 'ok' ? 'Salvo!' : 'Salvar'}
+        </button>
+      </div>
+      {msg && msg !== 'ok' && <p className="ligc__premio-erro">{msg}</p>}
+    </div>
+  )
+}
+
+function CardLigar({ p, onResponder, onAtualizar }) {
   const ehCadastro = p._tipo === 'cadastro'
   const pag = p.pagador || {}
   const { sorteios, numeros } = resumo(p)
@@ -241,6 +307,7 @@ function CardLigar({ p, onResponder }) {
         <dt>Data</dt><dd>{fmtData(p.created_at)}</dd>
       </dl>
 
+      <DadosCliente cpf={pag.cpf} onSalvo={onAtualizar} />
       <PremioResgate cpf={pag.cpf} />
 
       <textarea
@@ -429,7 +496,7 @@ export default function LigadorPainel() {
           <p className="usr-muted ligp__msg">{aba === 'retorno' ? 'Nenhum retorno pendente.' : 'Nada finalizado ainda.'}</p>
         ) : (
           <div className="ligp__list">
-            {lista.map((p) => <CardLigar key={p.id} p={p} onResponder={onResponder} />)}
+            {lista.map((p) => <CardLigar key={p.id} p={p} onResponder={onResponder} onAtualizar={carregar} />)}
           </div>
         )}
         </>

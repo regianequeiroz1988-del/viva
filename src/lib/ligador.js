@@ -143,3 +143,24 @@ export async function solicitarFichas() {
   const { error } = await supabase.rpc('ligador_solicitar_fichas', { p_token: l.token })
   return error ? { ok: false, error: error.message } : { ok: true }
 }
+
+// Nome/nascimento que o ligador preenche à mão quando a consulta de CPF não trouxe.
+export async function dadosCliente(cpf) {
+  const l = getLigador()
+  if (!l?.token || !isSupabaseConfigured || !cpf) return null
+  const { data, error } = await supabase.rpc('ligador_cliente', { p_token: l.token, p_cpf: cpf })
+  if (error) return null
+  return (Array.isArray(data) ? data[0] : data) || null
+}
+
+export async function salvarDadosCliente(cpf, nome, nascimento) {
+  const l = getLigador()
+  if (!l?.token) return { ok: false, error: 'sessão expirada' }
+  const { error } = await supabase.rpc('ligador_atualizar_cliente', {
+    p_token: l.token,
+    p_cpf: cpf,
+    p_nome: nome,
+    p_nascimento: nascimento || null,
+  })
+  return error ? { ok: false, error: error.message } : { ok: true }
+}
