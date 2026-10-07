@@ -86,7 +86,7 @@ export function AuthProvider({ children }) {
       })
       const ct = r.headers.get('content-type') || ''
       if (!ct.includes('application/json'))
-        return { ok: false, error: 'A consulta de CPF só funciona no site publicado.' }
+        return { ok: false, error: 'Não foi possível continuar agora. Tente de novo em alguns segundos.' }
       const data = await r.json()
       if (!r.ok) return { ok: false, error: data.error || 'Não foi possível consultar agora.' }
       // Conta que já tem telefone: o servidor já devolve a sessão → entra direto,
@@ -117,7 +117,7 @@ export function AuthProvider({ children }) {
       })
       const ct = r.headers.get('content-type') || ''
       if (!ct.includes('application/json'))
-        return { ok: false, error: 'O cadastro só funciona no site publicado.' }
+        return { ok: false, error: 'Não foi possível continuar agora. Tente de novo em alguns segundos.' }
       const data = await r.json()
       if (!r.ok || !data.session) return { ok: false, error: data.error || 'Não foi possível entrar agora.' }
       // Assenta a sessão do Supabase → dispara onAuthStateChange → carrega o perfil.

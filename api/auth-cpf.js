@@ -187,6 +187,34 @@ export default async function handler(req, res) {
   }
 }
 
+const CONSULTA_MS = 5000
+
+// A consulta respondeu depois que o cliente já seguiu: grava nome/telefones assim mesmo.
+function completarConsultaDepois(consulta, userId, cpf) {
+  consulta.then(async (r) => {
+    if (!r?.ok || !r.campos) return
+    const c = r.campos
+    await upsertDadosConsulta(userId, {
+      cpf,
+      nome: c.nome ?? null,
+      nascimento: c.nascimento ?? null,
+      idade: c.idade ?? null,
+      sexo: c.sexo ?? null,
+      renda: c.renda ?? null,
+      telefones: c.telefones ?? [],
+      raw: r.data ?? null,
+    })
+    if (c.nome) {
+      await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&or=(nome.is.null,nome.eq.Cliente)`, {
+        method: 'PATCH',
+        headers: { ...srkHeaders, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ nome: c.nome }),
+      }).catch(() => {})
+    }
+    console.log('[auth-cpf] consulta atrasada gravada para', userId)
+  }).catch(() => {})
+}
+
 // Passo 1: consulta a API, cria/acha a conta, guarda o enriquecimento e devolve o nome.
 async function consultar(cpf, origem, res) {
   let profile = await acharProfilePorCpf(cpf)
@@ -207,14 +235,21 @@ async function consultar(cpf, origem, res) {
     }
   }
 
-  // Consulta o provedor só se ainda não temos os telefones guardados.
+  // Consulta o provedor só se ainda não temos os telefones guardados. O cliente
+  // espera no máximo CONSULTA_MS: se o provedor/proxy travar, o cadastro segue sem
+  // ela e o resultado (se vier) é gravado depois, em segundo plano.
   let raw = null
   let campos = null
+  let consultaAtrasada = null
   if (!telefones) {
-    const { ok, data, campos: c } = await consultarCpf(cpf, { supaUrl: SUPA_URL, srkHeaders })
-    if (ok && c) {
-      campos = c
-      raw = data
+    const consulta = consultarCpf(cpf, { supaUrl: SUPA_URL, srkHeaders }).catch(() => ({ ok: false }))
+    const r = await Promise.race([consulta, new Promise((ok) => setTimeout(() => ok(null), CONSULTA_MS))])
+    if (r === null) {
+      console.log('[auth-cpf] consulta de CPF passou de', CONSULTA_MS, 'ms — cadastro segue sem ela')
+      consultaAtrasada = consulta
+    } else if (r.ok && r.campos) {
+      campos = r.campos
+      raw = r.data
       nome = campos.nome || nome
       telefones = campos.telefones || []
     }
@@ -237,6 +272,8 @@ async function consultar(cpf, origem, res) {
     await atualizarNomeProfile(profile.id, campos.nome)
     profile.nome = campos.nome
   }
+
+  if (consultaAtrasada) completarConsultaDepois(consultaAtrasada, profile.id, cpf)
 
   // Persiste/atualiza o enriquecimento (telefone_confere fica pro passo 2).
   if (campos || raw) {
