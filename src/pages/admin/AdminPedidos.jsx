@@ -888,8 +888,10 @@ export default function AdminPedidos() {
     return { ligador_id: destino, ligador_status: 'a_ligar', ligador_obs: null, ligador_at: null, ligador_liberado_at: null }
   }
   // Pedido de fichas do gerente em aberto fica atendido quando o admin envia.
-  const avisarGerente = (destino) => {
+  // Ligador direto: libera na hora (até 10 a ligar), sem esperar pedido de fichas.
+  const avisarGerente = async (destino) => {
     if (String(destino).startsWith('g:')) supabase.rpc('atender_solicitacoes_gerente', { p_gerente: destino.slice(2) }).then(() => {}, () => {})
+    else await supabase.rpc('admin_liberar_fichas_ligador', { p_ligador: destino }).then(() => {}, () => {})
   }
 
   // Atribui pedidos a um ligador ou gerente (sai da lista → aba "Enviados").
@@ -904,7 +906,7 @@ export default function AdminPedidos() {
       .in('id', ids)
     setProcessando(false)
     if (error) { setErro(`Não foi possível enviar: ${error.message}`); return }
-    avisarGerente(destino)
+    await avisarGerente(destino)
     const idset = new Set(ids)
     setRows((prev) => (prev || []).map((r) => (idset.has(r.id) ? { ...r, ...patch } : r)))
     setSelecionados(new Set())
@@ -941,7 +943,7 @@ export default function AdminPedidos() {
       .in('id', ids)
     setProcessando(false)
     if (error) { setErro(`Não foi possível enviar: ${error.message}`); return }
-    avisarGerente(destino)
+    await avisarGerente(destino)
     const idset = new Set(ids)
     setCadastros((prev) => (prev || []).map((p) => (idset.has(p.id) ? { ...p, ...patch } : p)))
     setSelecionados(new Set())
@@ -1150,6 +1152,13 @@ export default function AdminPedidos() {
           ) : filtrados.length === 0 ? (
             <p className="adm__empty-cell">
               {aba === 'cadexp' ? 'Nenhum cadastro exportado ainda.' : 'Nenhum cliente só-cadastro encontrado.'}
+              {!busca && cadastros.some(enviado) && (
+                <>
+                  <br />
+                  {cadastros.filter(enviado).length} já foram enviados ao ligador/gerente.{' '}
+                  <button type="button" className="adm__linkbtn" onClick={() => trocarAba('lig')}>Ver na aba Enviados</button>
+                </>
+              )}
             </p>
           ) : (
             filtrados.map((p) => {
