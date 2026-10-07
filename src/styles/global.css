@@ -2659,3 +2659,6 @@ ul { list-style: none; }
 @media (prefers-reduced-motion: reduce) {
   .acs-vivo__pulso, .acs-skel { animation: none; }
 }
+.ger-auto.is-alerta { color: #b3791b; }
+.ger-auto.is-alerta .ger-auto__trilho { background: #e8a33a; }
+.ligp__liberado { margin-bottom: 12px; padding: 10px 14px; border-radius: 12px; background: #e6f8ec; color: var(--green-dark); font-weight: 700; font-size: 0.88rem; }

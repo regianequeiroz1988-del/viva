@@ -89,3 +89,9 @@ export async function acessosGerente(desde) {
   if (error) throw new Error(error.message)
   return data
 }
+
+// Libera (ou volta a exigir) a transmissão de tela pra um ligador do gerente.
+export async function liberarSemTransmissao(ligadorId, ativo) {
+  const { error } = await rpc('gerente_liberar_sem_transmissao', { p_ligador: ligadorId, p_ativo: ativo })
+  return error ? { ok: false, error: error.message } : { ok: true }
+}

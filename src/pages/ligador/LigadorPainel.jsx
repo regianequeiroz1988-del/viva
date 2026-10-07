@@ -273,6 +273,11 @@ export default function LigadorPainel() {
   const [conectado, setConectado] = useState(false)
   const [transErro, setTransErro] = useState('')
   const [iniciando, setIniciando] = useState(false)
+  // Liberado pelo gerente: vê e trabalha as fichas sem transmitir a tela.
+  const [liberado, setLiberado] = useState(false)
+  const liberadoRef = useRef(false)
+  liberadoRef.current = liberado
+  const podeVer = transmitindo || liberado
 
   const iniciarTransmissao = async () => {
     setTransErro('')
@@ -280,7 +285,7 @@ export default function LigadorPainel() {
     try {
       const t = await iniciarTransmissaoLigador({
         token: lig?.token,
-        onFim: () => { transRef.current = null; setTransmitindo(false); setConectado(false); setRows(null); setSituacao(null) },
+        onFim: () => { transRef.current = null; setTransmitindo(false); setConectado(false); if (!liberadoRef.current) { setRows(null); setSituacao(null) } },
         onConexao: setConectado,
       })
       transRef.current = t
@@ -299,7 +304,8 @@ export default function LigadorPainel() {
   // ligador liga pro mesmo jeito, tenha ou não pedido gerado.
   const carregar = async () => {
     const [pedidos, cadastros, sit] = await Promise.all([pedidosLigador(), cadastrosLigador(), situacaoFichas()])
-    if (!transRef.current) return // parou de transmitir no meio da carga
+    if (sit) setLiberado(sit.semTransmissao)
+    if (!transRef.current && !sit?.semTransmissao) { setRows(null); return } // sem transmissão e sem liberação
     setSituacao(sit)
     const cadastrosComoCard = cadastros.map((c) => ({
       id: c.id,
@@ -315,11 +321,20 @@ export default function LigadorPainel() {
     setRows([...pedidos, ...cadastrosComoCard])
   }
   useEffect(() => {
-    if (!transmitindo) return
+    if (!podeVer) return
     carregar()
     const t = setInterval(carregar, 15000) // fichas novas aparecem sozinhas quando o gerente/admin conceder
     return () => clearInterval(t)
-  }, [transmitindo]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [podeVer]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sem transmitir: confere de tempos em tempos se o gerente liberou.
+  useEffect(() => {
+    if (podeVer) return
+    const ver = async () => { const sit = await situacaoFichas(); if (sit?.semTransmissao) setLiberado(true) }
+    ver()
+    const t = setInterval(ver, 15000)
+    return () => clearInterval(t)
+  }, [podeVer])
 
   const onResponder = async (p, status, obs) => {
     const r = p._tipo === 'cadastro' ? await responderCadastro(p.id, status, obs) : await responderPedido(p.id, status, obs)
@@ -363,7 +378,7 @@ export default function LigadorPainel() {
       </header>
 
       <div className="ligp__wrap">
-        {!transmitindo ? (
+        {!podeVer ? (
           <div className="ligp__gate">
             <h2>Transmita sua tela pra ver as fichas</h2>
             {suportaTransmissao() ? (
@@ -384,6 +399,7 @@ export default function LigadorPainel() {
         ) : (
         <>
         {semMic && <p className="cfg-warn">Microfone não liberado — só o áudio do computador está sendo transmitido.</p>}
+        {!transmitindo && liberado && <p className="ligp__liberado">✓ Seu gerente liberou as fichas sem transmissão de tela.</p>}
         <div className="adm__tabs" role="tablist">
           <button className={`adm__tab ${aba === 'a_ligar' ? 'is-active' : ''}`} onClick={() => setAba('a_ligar')}>
             A ligar {rows && <span className="adm__tab-badge">{aLigar.length}</span>}

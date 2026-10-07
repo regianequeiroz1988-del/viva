@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   getGerente, logoutGerente, situacaoGerente, ligadoresGerente, solicitacoesGerente,
-  concederFichas, recusarSolicitacao, pedirFichasAdmin, estoqueGerente, acessosGerente,
+  concederFichas, recusarSolicitacao, pedirFichasAdmin, estoqueGerente, acessosGerente, liberarSemTransmissao,
 } from '../../lib/gerente.js'
 import DistribuirFichas from './DistribuirFichas.jsx'
 import PainelAcessos from '../../components/PainelAcessos.jsx'
@@ -73,6 +73,17 @@ export default function GerentePainel() {
   const [qtdAdmin, setQtdAdmin] = useState('')
   const [conectado, setConectado] = useState(false)
   const [aba, setAba] = useState('fichas')
+  const [liberando, setLiberando] = useState(null)
+
+  const alternarTransmissao = async (l) => {
+    const ativo = !l.sem_transmissao
+    if (ativo && !window.confirm(`Liberar ${l.nome || l.usuario} pra ver as fichas SEM transmitir a tela? Fica assim até você desligar.`)) return
+    setLiberando(l.id)
+    const r = await liberarSemTransmissao(l.id, ativo)
+    setLiberando(null)
+    if (!r.ok) alert(r.error || 'Não foi possível alterar.')
+    carregar()
+  }
 
   const carregar = async () => {
     const [sit, ligs, sols, est] = await Promise.all([situacaoGerente(), ligadoresGerente(), solicitacoesGerente(), estoqueGerente()])
@@ -203,6 +214,11 @@ export default function GerentePainel() {
                     <span className="lig-pill lig-pill--r">{l.ruim} ruim</span>
                     {l.na_fila > 0 && <span className="usr-muted">{l.na_fila} na fila</span>}
                   </div>
+                  <label className={`ger-auto ${l.sem_transmissao ? 'is-on is-alerta' : ''}`} title="Deixa o ligador ver as fichas sem transmitir a tela">
+                    <input type="checkbox" role="switch" checked={!!l.sem_transmissao} disabled={liberando === l.id} onChange={() => alternarTransmissao(l)} />
+                    <span className="ger-auto__trilho" aria-hidden="true"><span /></span>
+                    <span>{l.sem_transmissao ? 'Liberado sem transmitir' : 'Exige transmissão'}</span>
+                  </label>
                 </div>
               ))}
             </div>

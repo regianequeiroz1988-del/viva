@@ -250,6 +250,7 @@ begin
 end; $$;
 grant execute on function public.gerente_situacao(uuid) to anon, authenticated;
 
+drop function if exists public.gerente_ligadores(uuid);
 create or replace function public.gerente_ligadores(p_token uuid)
 returns table(id uuid, usuario text, nome text, ativo boolean,
               a_ligar int, retorno bigint, bom bigint, ruim bigint, na_fila int)

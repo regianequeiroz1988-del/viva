@@ -134,7 +134,7 @@ export async function situacaoFichas() {
   const { data, error } = await supabase.rpc('ligador_situacao_fichas', { p_token: l.token })
   if (error) return null
   const r = Array.isArray(data) ? data[0] : data
-  return r ? { pendentes: r.pendentes, naFila: r.na_fila, solicitacaoPendente: r.solicitacao_pendente } : null
+  return r ? { pendentes: r.pendentes, naFila: r.na_fila, solicitacaoPendente: r.solicitacao_pendente, semTransmissao: !!r.sem_transmissao } : null
 }
 
 export async function solicitarFichas() {
