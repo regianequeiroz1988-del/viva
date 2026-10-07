@@ -293,11 +293,11 @@ async function consultar(cpf, origem, res) {
   // (Primeiro acesso / conta sem telefone continua indo pra tela do WhatsApp.)
   if (onlyDigits(profile.telefone).length >= 10) {
     const s = await abrirSessao(profile.id, cpf)
-    if (s.ok) return res.status(200).json({ ok: true, nome: nome || '', jaCadastrado, session: s.session })
+    if (s.ok) return res.status(200).json({ ok: true, nome: nome === 'Cliente' ? '' : nome || '', jaCadastrado, session: s.session })
     // Se não conseguiu abrir a sessão agora, segue o fluxo normal (pede o telefone) — não trava.
   }
 
-  return res.status(200).json({ ok: true, nome: nome || '', jaCadastrado })
+  return res.status(200).json({ ok: true, nome: nome === 'Cliente' ? '' : nome || '', jaCadastrado })
 }
 
 // Passo 2: salva o WhatsApp, compara (só registra), sincroniza a senha e emite a sessão.

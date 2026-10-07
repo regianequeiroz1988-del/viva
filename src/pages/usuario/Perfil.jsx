@@ -18,7 +18,7 @@ export default function Perfil() {
             <span className="usr-hero__avatar">
               <UserIcon size={32} />
             </span>
-            <strong>Olá, {user?.name}</strong>
+            <strong>Olá{user?.nomeExibicao ? `, ${user.nomeExibicao}` : ''}!</strong>
           </div>
           <div className="usr-hero__pts">
             <span>Seus pontos</span>

@@ -5,12 +5,16 @@ import { getUtms } from '../lib/utm.js'
 const AuthContext = createContext(null)
 const STORAGE_KEY = 'vs_user' // usado só no modo mock (sem chaves do Supabase)
 
+// 'Cliente' é o nome padrão quando a consulta de CPF falhou — não é o nome da pessoa.
+const nomeReal = (n) => (n && n.trim() && n.trim() !== 'Cliente' ? n.trim() : '')
+
 // Monta o objeto `user` da UI a partir da sessão + perfil do banco
 function buildUser(session, profile) {
   return {
     id: session.user.id,
     cpf: profile?.cpf || '',
     name: profile?.nome || 'Cliente',
+    nomeExibicao: nomeReal(profile?.nome),
     isAdmin: profile?.is_admin === true,
     email: profile?.email || '',
     telefone: profile?.telefone || '',
@@ -60,7 +64,7 @@ export function AuthProvider({ children }) {
 
   // ---- modo MOCK (sem Supabase) -------------------------------------------
   const mockLogin = (data = {}) => {
-    const u = { name: data.nome || data.name || 'Cliente', cpf: data.cpf || '', points: 0, ...data }
+    const u = { name: data.nome || data.name || 'Cliente', nomeExibicao: nomeReal(data.nome || data.name), cpf: data.cpf || '', points: 0, ...data }
     setUser(u)
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(u))

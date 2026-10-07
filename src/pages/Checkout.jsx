@@ -309,7 +309,7 @@ export default function Checkout() {
     return (
       <main className="checkout2">
         <div className="checkout2__wrap checkout2__wrap--narrow">
-          <PagamentoOk evento={evento} edicao={edicao} numeros={numerosComprados} total={totalPago} nome={user?.name} />
+          <PagamentoOk evento={evento} edicao={edicao} numeros={numerosComprados} total={totalPago} nome={user?.nomeExibicao} />
         </div>
       </main>
     )
@@ -327,7 +327,7 @@ export default function Checkout() {
             gateway={pix?.gateway || gateway}
             podeTrocar={gateways.length > 1}
             onTrocarGateway={trocarGateway}
-            nome={user?.name}
+            nome={user?.nomeExibicao}
             cpf={user?.cpf}
             evento={evento}
             edicao={edicao}

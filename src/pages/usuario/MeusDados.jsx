@@ -13,7 +13,7 @@ export default function MeusDados() {
     if (!user) return
     const p = user.profile || {}
     setForm({
-      nome: p.nome || (user.name !== 'Cliente' ? user.name : ''),
+      nome: p.nome && p.nome !== 'Cliente' ? p.nome : (user.nomeExibicao || ''),
       nascimento: p.nascimento || '',
       genero: p.genero || '',
       telefone: user.telefone || p.telefone || '',

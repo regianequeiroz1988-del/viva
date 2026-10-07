@@ -137,7 +137,7 @@ export default function Header({ bare = false }) {
             <Link to="/usuario/perfil" className="btn btn--login hd__login" onClick={closeMobile}>
               <UserIcon size={18} />
               <span>
-                Olá, <strong>{user.name}</strong>
+                {user.nomeExibicao ? <>Olá, <strong>{user.nomeExibicao.split(' ')[0]}</strong></> : <strong>Minha conta</strong>}
               </span>
             </Link>
           ) : (
@@ -193,7 +193,7 @@ export default function Header({ bare = false }) {
             <Link to="/usuario/perfil" className="btn btn--login hd__mobile-login" onClick={closeMobile}>
               <UserIcon size={18} />
               <span>
-                Olá, <strong>{user.name}</strong>
+                {user.nomeExibicao ? <>Olá, <strong>{user.nomeExibicao.split(' ')[0]}</strong></> : <strong>Minha conta</strong>}
               </span>
             </Link>
           ) : (

@@ -144,7 +144,7 @@ export default function MinhaCarteira() {
         </div>
 
         <p className="usr-wallet__hello">
-          <strong>Olá, {user?.name}.</strong> Gerencie seus créditos, saldo sacável e
+          <strong>Olá{user?.nomeExibicao ? `, ${user.nomeExibicao}` : ''}.</strong> Gerencie seus créditos, saldo sacável e
           solicite saques em um só lugar.
         </p>
 
