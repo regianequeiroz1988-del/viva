@@ -43,6 +43,7 @@ export const CONFIG_KEYS = {
   // Base de consulta de CPF ativa: 'serasa' (padrão) ou 'supremo'. Não é segredo
   // (por isso não termina em _key/_token) — só controla qual provedor é usado.
   baseConsultaCpf: 'base_consulta_cpf',
+  workApiKey: 'workapi_key', // chave da Work API (base 'work') — termina em _key: oculta dos visitantes
   // Valor do "prêmio instantâneo" mostrado no /ganhador ao digitar o CPF.
   // Editável pelo ligador (RPC ligador_definir_premio) — não só pelo admin.
   // Público de propósito (não termina em _key/_token): o /ganhador é anônimo.

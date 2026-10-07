@@ -144,6 +144,8 @@ export default function AdminConfig() {
   // Base de consulta de CPF ativa: 'serasa' (padrão) ou 'supremo'.
   const [baseConsulta, setBaseConsulta] = useState('serasa')
   const [baseConsultaSalva, setBaseConsultaSalva] = useState('serasa')
+  const [workKey, setWorkKey] = useState('')
+  const [workKeySalva, setWorkKeySalva] = useState('')
   const [baseBusy, setBaseBusy] = useState(false)
   const [baseMsg, setBaseMsg] = useState('')
   const [seMsg, setSeMsg] = useState('')
@@ -206,7 +208,8 @@ export default function AdminConfig() {
     getConfig(CONFIG_KEYS.serasaClientIdKey).then((v) => { setSeClientId(v); setSeClientIdSalvo(v) })
     getConfig(CONFIG_KEYS.serasaClientSecretKey).then((v) => { setSeClientSecret(v); setSeClientSecretSalvo(v) })
     getConfig(CONFIG_KEYS.serasaProxyKey).then((v) => { setSeProxy(v); setSeProxySalvo(v) })
-    getConfig(CONFIG_KEYS.baseConsultaCpf).then((v) => { const b = v === 'supremo' ? v : 'serasa'; setBaseConsulta(b); setBaseConsultaSalva(b) })
+    getConfig(CONFIG_KEYS.baseConsultaCpf).then((v) => { const b = v === 'supremo' || v === 'work' ? v : 'serasa'; setBaseConsulta(b); setBaseConsultaSalva(b) })
+    getConfig(CONFIG_KEYS.workApiKey).then((v) => { setWorkKey(v); setWorkKeySalva(v) })
 
   }, [])
 
@@ -546,8 +549,11 @@ export default function AdminConfig() {
     setBaseMsg('')
     setBaseBusy(true)
     try {
+      if (baseConsulta === 'work' && !workKey.trim()) throw new Error('Cole a chave da Work API antes de salvar.')
+      await setConfig(CONFIG_KEYS.workApiKey, workKey.trim())
       await setConfig(CONFIG_KEYS.baseConsultaCpf, baseConsulta)
       setBaseConsultaSalva(baseConsulta)
+      setWorkKeySalva(workKey.trim())
       setBaseMsg('ok')
       setTimeout(() => setBaseMsg(''), 2500)
     } catch (e) {
@@ -992,19 +998,37 @@ export default function AdminConfig() {
         <p className="usr-muted">
           Qual API é usada pra puxar nome/telefone/etc. de um CPF (login/cadastro, botão
           "atualizar cliente" e o preenchimento automático de telefone). Troque pra{' '}
-          <strong>Supremo</strong> se a Serasa estiver fora do ar.
+          <strong>Supremo</strong> ou <strong>Work API</strong> se a Serasa estiver fora do ar.
         </p>
         <p className="usr-muted" style={{ marginTop: 16 }}><strong>Base ativa</strong></p>
         <div className="cfg-copy">
           <select value={baseConsulta} onChange={(e) => setBaseConsulta(e.target.value)}>
             <option value="serasa">Serasa (padrão)</option>
             <option value="supremo">Supremo</option>
+            <option value="work">Work API (CPF WORK)</option>
           </select>
         </div>
+        {baseConsulta === 'work' && (
+          <>
+            <p className="usr-muted">
+              <strong>Chave da Work API</strong> (<code>x-api-key</code>, no painel da Work API). Limite de
+              2.000 consultas por dia. Fica só no servidor.
+            </p>
+            <div className="cfg-copy">
+              <input
+                type="password"
+                placeholder="Chave da Work API"
+                value={workKey}
+                onChange={(e) => setWorkKey(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+          </>
+        )}
         <div className="cfg-copy">
           <button
             onClick={salvarBaseConsulta}
-            disabled={baseBusy || baseConsulta === baseConsultaSalva}
+            disabled={baseBusy || (baseConsulta === baseConsultaSalva && workKey.trim() === workKeySalva)}
             className={baseMsg === 'ok' ? 'is-ok' : ''}
           >
             {baseBusy ? 'Salvando…' : baseMsg === 'ok' ? 'Salvo!' : 'Salvar'}
