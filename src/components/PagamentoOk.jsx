@@ -113,16 +113,9 @@ export default function PagamentoOk({ evento, numeros = 1, total = 0, pedidoId, 
     <div className="okmodal" role="dialog" aria-modal="true" aria-labelledby="okmodal-title" onFocusCapture={aoFocar} onKeyDown={aoTeclar}>
       <Confetti />
       <div className="okmodal__backdrop" onClick={fechar} />
+      <div className="okmodal__caixa">
+      <img src="/img/mascote-login.png" alt="" aria-hidden="true" className="okmodal__personagem" />
       <div className="okmodal__card" ref={cardRef} tabIndex={-1} onMouseEnter={pausar}>
-        <div className="okmodal__personagem-wrapper">
-          <img
-            src="/img/mascote-login.png"
-            alt="Mascote Viva Sorte"
-            className="okmodal__personagem"
-          />
-          <span className="okmodal__thumbsup">👍</span>
-        </div>
-
         <h2 className="okmodal__title" id="okmodal-title">Pagamento confirmado!</h2>
         <p className="okmodal__sub">
           {primeiroNome ? <>Tudo certo, <strong>{primeiroNome}</strong>! </> : 'Tudo certo! '}
@@ -169,6 +162,7 @@ export default function PagamentoOk({ evento, numeros = 1, total = 0, pedidoId, 
             Voltando ao início em {restante}s
           </div>
         )}
+      </div>
       </div>
     </div>
   )
