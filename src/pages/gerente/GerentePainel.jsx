@@ -17,7 +17,7 @@ const fmtHora = (iso) => {
 const credenciais = async () => ({ role: 'gerente', token: getGerente()?.token || '' })
 
 function Solicitacao({ s, disponivel, onFeito }) {
-  const max = Math.min(10, disponivel)
+  const max = disponivel
   const [qtd, setQtd] = useState(max)
   const [busy, setBusy] = useState(false)
   const [erro, setErro] = useState('')
@@ -181,13 +181,13 @@ export default function GerentePainel() {
 
         <section className="adm__panel">
           <h2 className="adm__panel-title">Distribuir fichas</h2>
-          <p className="usr-muted">Escolha as fichas e mande pro ligador. Ele vê até 10 por vez; o resto fica na fila dele.</p>
+          <p className="usr-muted">Escolha as fichas e mande pro ligador. Ele vê todas na hora.</p>
           <DistribuirFichas estoque={fichasEstoque} ligadores={ligadores} onEnviado={carregar} />
         </section>
 
         <section className="adm__panel">
           <h2 className="adm__panel-title">Pedidos de fichas dos ligadores</h2>
-          <p className="usr-muted">Cada ligador vê no máximo 10 fichas por vez. Primeiro sai da fila dele, depois do seu estoque.</p>
+          <p className="usr-muted">As fichas saem primeiro da fila do ligador, depois do seu estoque.</p>
           {pedidos === null ? (
             <p className="usr-muted">Carregando…</p>
           ) : pedidos.length === 0 ? (

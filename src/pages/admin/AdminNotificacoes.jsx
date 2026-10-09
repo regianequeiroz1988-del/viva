@@ -8,7 +8,7 @@ const fmtHora = (iso) => {
 }
 
 function Solicitacao({ s, onFeito }) {
-  const max = Math.min(10, s.na_fila)
+  const max = s.na_fila
   const [qtd, setQtd] = useState(max)
   const [busy, setBusy] = useState(false)
   const [erro, setErro] = useState('')

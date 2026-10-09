@@ -896,7 +896,7 @@ export default function AdminPedidos() {
     return { ligador_id: destino, ligador_status: 'a_ligar', ligador_obs: null, ligador_at: null, ligador_liberado_at: null }
   }
   // Pedido de fichas do gerente em aberto fica atendido quando o admin envia.
-  // Ligador direto: libera na hora (até 10 a ligar), sem esperar pedido de fichas.
+  // Ligador direto: libera na hora, sem esperar pedido de fichas.
   const avisarGerente = async (destino) => {
     if (String(destino).startsWith('g:')) supabase.rpc('atender_solicitacoes_gerente', { p_gerente: destino.slice(2) }).then(() => {}, () => {})
     else {
