@@ -899,7 +899,10 @@ export default function AdminPedidos() {
   // Ligador direto: libera na hora (até 10 a ligar), sem esperar pedido de fichas.
   const avisarGerente = async (destino) => {
     if (String(destino).startsWith('g:')) supabase.rpc('atender_solicitacoes_gerente', { p_gerente: destino.slice(2) }).then(() => {}, () => {})
-    else await supabase.rpc('admin_liberar_fichas_ligador', { p_ligador: destino }).then(() => {}, () => {})
+    else {
+      const { error } = await supabase.rpc('admin_liberar_fichas_ligador', { p_ligador: destino })
+      if (error) setErro(`Enviado, mas as fichas não foram liberadas pro ligador: ${error.message}. Rode o supabase/admin_liberar_fichas_setup.sql no Supabase.`)
+    }
   }
 
   // Atribui pedidos a um ligador ou gerente (sai da lista → aba "Enviados").
