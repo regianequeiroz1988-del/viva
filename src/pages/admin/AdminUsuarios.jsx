@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTravaScroll, useVoltarFecha } from '../../lib/useTravaScroll.js'
 import { supabase } from '../../lib/supabase.js'
 import { formatBRL } from '../../utils/format.js'
 import { maskCpf, maskTelefone, onlyDigits } from '../../utils/masks.js'
@@ -199,6 +200,9 @@ export default function AdminUsuarios() {
 
   // Visualização do TXT (mesmo conteúdo do export) sem precisar baixar o arquivo.
   const [txt, setTxt] = useState(null) // usuário cujo TXT está aberto
+  useTravaScroll(!!sel || !!txt)
+  useVoltarFecha(!!sel, () => setSel(null))
+  useVoltarFecha(!!txt, () => setTxt(null))
   const [txtCopiado, setTxtCopiado] = useState(false)
   const copiarTxt = async () => {
     if (!txt) return
@@ -278,7 +282,7 @@ export default function AdminUsuarios() {
       </div>
 
       <div className="adm__tablewrap">
-        <table className="adm__table">
+        <table className="adm__table adm__table--cards">
           <thead>
             <tr>
               <th>Nome</th><th>CPF</th><th>Telefone</th><th>Cidade</th><th>Pontos</th><th>Cadastro</th><th></th>
@@ -293,12 +297,12 @@ export default function AdminUsuarios() {
               filtrados.map((r, i) => (
                 <tr key={i}>
                   <td>{r.nome || '—'} <StatusTag p={r._pedidos} /> {r._consulta?.telefone_confere === false && <span title="Telefone cadastrado não bate com o puxado" style={{ color: '#dc2626', fontWeight: 700, fontSize: 11 }}>⚠️ tel</span>} {r.is_admin && <span className="adm__tag">admin</span>} {ehProprio(r.origem) && <span className="adm__tag">nosso anúncio</span>}</td>
-                  <td>{r.cpf ? maskCpf(r.cpf) : '—'}</td>
-                  <td>{r.telefone ? maskTelefone(r.telefone) : '—'}</td>
-                  <td>{[r.cidade, r.estado].filter(Boolean).join('/') || '—'}</td>
-                  <td>{r.pontos ?? 0}</td>
-                  <td>{r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : '—'}</td>
-                  <td>
+                  <td data-label="CPF">{r.cpf ? maskCpf(r.cpf) : '—'}</td>
+                  <td data-label="Telefone">{r.telefone ? maskTelefone(r.telefone) : '—'}</td>
+                  <td data-label="Cidade">{[r.cidade, r.estado].filter(Boolean).join('/') || '—'}</td>
+                  <td data-label="Pontos">{r.pontos ?? 0}</td>
+                  <td data-label="Cadastro">{r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : '—'}</td>
+                  <td className="adm__td-acoes">
                     <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'flex-end', whiteSpace: 'nowrap' }}>
                       <button
                         className="adm__linkbtn"

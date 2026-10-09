@@ -23,6 +23,11 @@
   --shadow-sm: 0 4px 16px rgba(20, 30, 90, 0.07);
   --container: 1536px;
   --header-h: 76px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --appbar-h: 52px;
+  --tabbar-h: 62px;
+  --ease-ios: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 /* ---- Reset -------------------------------------------------------------- */
@@ -1372,23 +1377,6 @@ ul { list-style: none; }
   .admmodal__pixcopy-row .adm__btn { justify-content: center; }
 }
 
-/* ---- Responsivo: sidebar vira barra superior compacta (só ícones) ---- */
-@media (max-width: 860px) {
-  .adm { flex-direction: column; }
-  .adm__side { flex: none; height: auto; position: sticky; top: 0; z-index: 50; flex-direction: row; align-items: center; gap: 6px; padding: 10px 12px; overflow-x: auto; }
-  .adm__brand { padding: 4px 8px 4px 4px; }
-  .adm__brand-txt small { display: none; }
-  .adm__nav { flex-direction: row; flex: 1; gap: 4px; }
-  .adm__nav-label { display: none; }
-  .adm__link span { display: none; }
-  .adm__link { padding: 10px; }
-  .adm__foot { flex-direction: row; align-items: center; border-top: none; padding-top: 0; gap: 4px; }
-  .adm__user, .adm__back span, .adm__logout span { display: none; }
-  .adm__back, .adm__logout { padding: 9px; }
-  .adm__main { padding: 22px 16px 48px; }
-  .adm__pagehead { margin-bottom: 18px; }
-}
-
 /* ===========================================================================
    CHECKOUT (logado) — igual ao oficial: carrinho + resumo + Pix
    =========================================================================== */
@@ -2633,3 +2621,210 @@ ul { list-style: none; }
 .ger-auto.is-alerta { color: #b3791b; }
 .ger-auto.is-alerta .ger-auto__trilho { background: #e8a33a; }
 .ligp__liberado { margin-bottom: 12px; padding: 10px 14px; border-radius: 12px; background: #e6f8ec; color: var(--green-dark); font-weight: 700; font-size: 0.88rem; }
+
+/* ===========================================================================
+   MOBILE COM CARA DE APP (docs/MOBILE_APP.md)
+   =========================================================================== */
+
+/* ---- Base ---- */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { -webkit-tap-highlight-color: transparent; }
+button, a, [role="button"], label, select, summary { touch-action: manipulation; }
+
+@media (max-width: 860px) {
+  input, select, textarea { font-size: 16px !important; } /* iPhone dá zoom em campo < 16px */
+  .adm__btn, .adm__tab, .ligc__acoes button, .ligc__premio-salvar, .ligp__sair { min-height: 44px; }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  button:not(:disabled):active, .adm__pcard:active, .adm__sheet-item:active { transform: scale(0.97); }
+  button, .adm__pcard, .adm__sheet-item { transition: transform 0.12s var(--ease-ios), background 0.15s, color 0.15s; }
+}
+
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
+
+/* ---- Abas internas: rolam pro lado (Pedidos, Ligador, Gerente) ---- */
+.adm__tabs, .ger__abas {
+  flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.adm__tabs::-webkit-scrollbar, .ger__abas::-webkit-scrollbar { display: none; }
+.adm__tab, .ger__abas button { flex: none; white-space: nowrap; scroll-snap-align: start; }
+
+/* ---- Admin: barra de cima + barra de abas embaixo ---- */
+.adm__appbar, .adm__tabbar { display: none; }
+
+@media (max-width: 860px) {
+  .adm { flex-direction: column; }
+  .adm__side { display: none; }
+
+  .adm__appbar {
+    display: flex; align-items: center; gap: 10px;
+    position: sticky; top: 0; z-index: 60;
+    height: calc(var(--appbar-h) + var(--safe-top));
+    padding: var(--safe-top) 16px 0;
+    background: rgba(255, 255, 255, 0.82);
+    -webkit-backdrop-filter: saturate(180%) blur(18px);
+    backdrop-filter: saturate(180%) blur(18px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+  .adm__appbar .adm__brand-mark { width: 30px; height: 30px; border-radius: 9px; font-size: 0.72rem; box-shadow: none; }
+  .adm__appbar-tit { margin: 0; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .adm__main { padding: 16px 16px calc(var(--tabbar-h) + var(--safe-bottom) + 24px); }
+  .adm__pagehead { margin-bottom: 14px; }
+  .adm__pagehead .adm__title { display: none; } /* o título já está na barra de cima */
+
+  .adm__tabbar {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+    padding: 6px 4px calc(6px + var(--safe-bottom));
+    background: rgba(255, 255, 255, 0.9);
+    -webkit-backdrop-filter: saturate(180%) blur(18px);
+    backdrop-filter: saturate(180%) blur(18px);
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+  }
+  .adm__tabbar button {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    min-width: 0; min-height: 50px; font-size: 0.66rem; font-weight: 700; color: #8a8fa3;
+  }
+  .adm__tabbar button > span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; }
+  .adm__tabbar button.is-active { color: var(--blue); }
+  .adm__tabbar-ic { position: relative; display: grid; place-items: center; }
+  .adm__tabbar-ic em {
+    position: absolute; top: -5px; right: -11px; min-width: 18px; height: 18px; padding: 0 5px;
+    border-radius: 999px; background: #e23b4a; color: #fff; font-style: normal; font-size: 0.64rem; font-weight: 800;
+    display: grid; place-items: center; border: 2px solid #fff;
+  }
+
+  /* Folha "Mais" */
+  .adm__sheet-fundo { position: fixed; inset: 0; z-index: 80; background: rgba(14, 17, 36, 0.4); animation: admFade 0.2s ease; }
+  .adm__sheet {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    max-height: 85dvh; overflow-y: auto; overscroll-behavior: contain;
+    background: var(--surface); border-radius: 20px 20px 0 0;
+    padding: 6px 12px calc(16px + var(--safe-bottom));
+    box-shadow: 0 -10px 40px rgba(14, 17, 36, 0.2);
+    animation: sheetUp 0.32s var(--ease-ios);
+  }
+  .adm__sheet-alca { display: block; width: 40px; height: 5px; border-radius: 3px; background: #d6d9e4; margin: 6px auto 10px; }
+  .adm__sheet-item {
+    display: flex; align-items: center; gap: 14px; width: 100%;
+    min-height: 52px; padding: 0 14px; border-radius: 12px;
+    font-size: 1rem; font-weight: 600; color: var(--text); text-align: left;
+  }
+  .adm__sheet-item svg { flex: none; color: var(--muted); }
+  .adm__sheet-item span { flex: 1; }
+  .adm__sheet-item.is-active { background: var(--blue-light); color: var(--blue); }
+  .adm__sheet-item.is-active svg { color: var(--blue); }
+  .adm__sheet-item.is-perigo, .adm__sheet-item.is-perigo svg { color: #d23b4a; }
+  .adm__sheet hr { border: 0; border-top: 1px solid var(--border); margin: 8px 4px; }
+
+  /* Abas do admin grudadas embaixo da barra de cima */
+  .adm .adm__tabs {
+    margin: 0 -16px 14px; padding: 0 16px;
+    position: sticky; top: calc(var(--appbar-h) + var(--safe-top)); z-index: 40;
+    background: var(--bg);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 28px), transparent);
+            mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 28px), transparent);
+  }
+  .adm__tab { padding: 12px 14px; }
+
+  /* Busca / filtros / seleção */
+  .adm__toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
+  .adm__searchwrap { max-width: none; min-width: 0; }
+  .adm__search { height: 46px; border-radius: 12px; }
+  .adm__selrow { gap: 10px; }
+  .adm__selall input[type="checkbox"], .adm__pcard input[type="checkbox"] { width: 22px; height: 22px; }
+
+  /* Ações em lote: barra fixa embaixo, acima das abas */
+  .adm .adm__bulkbar {
+    position: fixed; top: auto; left: 8px; right: 8px; z-index: 55;
+    bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 8px);
+    margin: 0; border-radius: 16px; padding: 12px;
+    box-shadow: 0 10px 30px rgba(14, 17, 36, 0.22);
+    flex-direction: column; align-items: stretch; gap: 8px;
+    animation: sheetUp 0.25s var(--ease-ios);
+  }
+  .adm .adm__bulkbar-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .adm .adm__bulkbar-actions > * { flex: 1 1 100%; justify-content: center; min-height: 44px; }
+  .adm .adm__bulkbar-actions .adm__ligsel { flex: 1 1 0; min-width: 0; width: auto; max-width: none; }
+  .adm .adm__bulkbar-actions .adm__ligsel + .adm__btn { flex: 0 0 auto; padding: 0 18px; }
+  .adm__main:has(.adm__bulkbar) { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 190px); }
+
+  /* Cards */
+  .adm__pcard { border-radius: 16px; }
+  .adm__pcard-grid dd { overflow-wrap: anywhere; }
+}
+
+/* ---- Modais viram folha que sobe de baixo ---- */
+@media (max-width: 640px) {
+  .admmodal { align-items: flex-end; padding: 0; }
+  .admmodal__box {
+    max-width: none; max-height: 92dvh; overscroll-behavior: contain;
+    border-radius: 20px 20px 0 0;
+    padding: 10px 16px calc(20px + var(--safe-bottom));
+    animation: sheetUp 0.32s var(--ease-ios);
+  }
+  .admmodal__box::before {
+    content: ""; display: block; width: 40px; height: 5px; border-radius: 3px;
+    background: #d6d9e4; margin: 0 auto 12px;
+  }
+  .admmodal__head h2 { font-size: 1.15rem; }
+  .admmodal__x { min-width: 44px; min-height: 44px; margin: -10px -10px 0 0; }
+  .admmodal__foot {
+    position: sticky; bottom: calc(-20px - var(--safe-bottom)); z-index: 1;
+    margin: 18px -16px 0; padding: 12px 16px calc(12px + var(--safe-bottom));
+    background: var(--surface); display: grid; grid-template-columns: 1fr; justify-content: stretch; gap: 8px;
+  }
+  .admmodal__foot > * { width: 100%; justify-content: center; min-height: 48px; }
+}
+
+/* ---- Tabelas viram lista de cards ---- */
+@media (max-width: 640px) {
+  .adm__table--cards { min-width: 0; }
+  .adm__table--cards thead { display: none; }
+  .adm__table--cards tbody tr { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .adm__table--cards tbody tr:last-child { border-bottom: none; }
+  .adm__table--cards td { padding: 0; border: 0; white-space: normal; overflow-wrap: anywhere; }
+  .adm__table--cards td[data-label]::before {
+    content: attr(data-label); display: block; margin-bottom: 1px;
+    font-size: 0.68rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .adm__table--cards td:first-child, .adm__table--cards td[colspan], .adm__table--cards .adm__td-acoes { grid-column: 1 / -1; }
+  .adm__table--cards td:first-child:not([data-label]) { font-weight: 700; }
+  .adm__table--cards .adm__td-acoes > div { justify-content: flex-start !important; }
+  .adm__table--cards .adm__td-acoes .adm__linkbtn { min-height: 40px; padding: 0 4px; }
+}
+
+/* ---- Painéis do Ligador e do Gerente ---- */
+@media (max-width: 860px) {
+  .ligp { --ligp-top-h: calc(60px + var(--safe-top)); }
+  .ligp__top {
+    position: sticky; top: 0; z-index: 50;
+    min-height: var(--ligp-top-h);
+    padding: calc(8px + var(--safe-top)) 16px 8px;
+  }
+  .ligp__id { min-width: 0; }
+  .ligp__id span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ligp__top-acoes { flex-wrap: nowrap; gap: 6px; }
+  .ligp__live { white-space: nowrap; padding: 6px 10px; }
+  .ligp__sair { padding: 8px 14px; }
+
+  .ger__abas { justify-content: flex-start; top: var(--ligp-top-h); z-index: 40; }
+  .ligp .adm__tabs {
+    position: sticky; top: var(--ligp-top-h); z-index: 40;
+    margin: 0 -12px 14px; padding: 0 12px; background: var(--bg);
+  }
+
+  .ligp__wrap { padding: 14px 12px calc(32px + var(--safe-bottom)); }
+  .ligp__list { grid-template-columns: 1fr; gap: 12px; }
+  .ligc__acoes { display: grid; grid-template-columns: 1fr 1fr 56px; gap: 8px; }
+  .ligc__acoes button { min-height: 48px; }
+  .ligc__obs { min-height: 88px; }
+  .ligc__premio-input { min-height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adm__sheet, .adm__sheet-fundo, .admmodal__box, .adm .adm__bulkbar { animation: none; }
+}

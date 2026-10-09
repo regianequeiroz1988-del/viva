@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTravaScroll, useVoltarFecha } from '../../lib/useTravaScroll.js'
+import { useAbaVisivel } from '../../lib/useAbaVisivel.js'
 import { supabase } from '../../lib/supabase.js'
 import { getConfig, CONFIG_KEYS } from '../../lib/config.js'
 import { criarPagamentoPixFailover, montarRodizio, GATEWAYS } from '../../lib/pagamentos.js'
@@ -180,6 +182,8 @@ export function PedidoModal({
   onDesatribuir,
 }) {
   const [ligLocal, setLigLocal] = useState('')
+  useTravaScroll(true)
+  useVoltarFecha(true, onClose)
   const ligAtual = ligadores.find((l) => l.id === pedido.ligador_id)
   const itens = Array.isArray(pedido.itens) ? pedido.itens : []
   const { numeros } = resumoPedido(pedido)
@@ -302,6 +306,8 @@ export function PedidoModal({
 // ---- Modal de detalhe de um "só cadastro" (perfil sem nenhum pedido) ------
 function CadastroModal({ perfil, consulta, ligadores = [], onClose, onExport, onReverter, onAtribuir, onDesatribuir }) {
   const [ligLocal, setLigLocal] = useState('')
+  useTravaScroll(true)
+  useVoltarFecha(true, onClose)
   const ligAtual = ligadores.find((l) => l.id === perfil.ligador_id)
   const c = consulta || {}
   const nomeReal = nomeConsulta(c) || perfil.nome || 'Cliente'
@@ -378,6 +384,8 @@ export default function AdminPedidos() {
   const [nomes, setNomes] = useState({}) // user_id -> { nome, cpf, email, telefone }
   const [cadastros, setCadastros] = useState(null) // perfis SEM nenhum pedido ("Somente Cadastros")
   const [aba, setAba] = useState('nao') // 'nao'|'exp'|'lig'|'cad'|'cadexp'
+  const abasRef = useRef(null)
+  useAbaVisivel(abasRef, aba)
   const [filtro, setFiltro] = useState('todos')
   const [busca, setBusca] = useState('')
   const [erro, setErro] = useState('')
@@ -990,7 +998,7 @@ export default function AdminPedidos() {
       </header>
 
       {/* Abas: não exportados x exportados */}
-      <div className="adm__tabs" role="tablist">
+      <div className="adm__tabs" role="tablist" ref={abasRef}>
         <button className={`adm__tab ${aba === 'nao' ? 'is-active' : ''}`} onClick={() => trocarAba('nao')} role="tab" aria-selected={aba === 'nao'}>
           Pedidos {rows && <span className="adm__tab-badge">{naoCount}</span>}
         </button>

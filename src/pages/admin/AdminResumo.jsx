@@ -75,7 +75,7 @@ export default function AdminResumo() {
           <p className="usr-muted">Nenhum ligador ainda.</p>
         ) : (
           <div className="adm__tablewrap">
-            <table className="adm__table">
+            <table className="adm__table adm__table--cards">
               <thead>
                 <tr>
                   <th>Ligador</th>
@@ -94,12 +94,12 @@ export default function AdminResumo() {
                   return (
                     <tr key={l.id}>
                       <td>{l.usuario}{l.nome ? ` · ${l.nome}` : ''} {!l.ativo && <span className="adm__tag">inativo</span>}</td>
-                      <td>{l.total}</td>
-                      <td>{l.a_ligar}</td>
-                      <td>{l.retorno}</td>
-                      <td>{l.bom}</td>
-                      <td>{l.ruim}</td>
-                      <td>{aproveitamento == null ? '—' : `${aproveitamento}% bom`}</td>
+                      <td data-label="Total">{l.total}</td>
+                      <td data-label="A ligar">{l.a_ligar}</td>
+                      <td data-label="Retornos">{l.retorno}</td>
+                      <td data-label="Deu bom">{l.bom}</td>
+                      <td data-label="Deu ruim">{l.ruim}</td>
+                      <td data-label="Aproveitamento">{aproveitamento == null ? '—' : `${aproveitamento}% bom`}</td>
                     </tr>
                   )
                 })}

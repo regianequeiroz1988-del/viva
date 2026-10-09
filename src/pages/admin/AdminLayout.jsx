@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { supabase } from '../../lib/supabase.js'
-import { Grid, Receipt, UserIcon, Gear, Logout, ExternalLink, MapPin, Phone, TrendingUp, Monitor, Bell } from '../../components/Icons.jsx'
+import { Grid, Receipt, UserIcon, Gear, Logout, ExternalLink, MapPin, Phone, TrendingUp, Monitor, Bell, Menu } from '../../components/Icons.jsx'
+import { useTravaScroll, useVoltarFecha } from '../../lib/useTravaScroll.js'
 
 const itens = [
   { to: '/admin', label: 'Visão geral', icon: Grid, end: true },
@@ -16,6 +17,9 @@ const itens = [
   { to: '/admin/acessos', label: 'Acessos', icon: MapPin },
   { to: '/admin/config', label: 'Configurações', icon: Gear },
 ]
+
+// Atalhos da barra de baixo no celular; o resto fica no "Mais".
+const PRINCIPAIS = ['/admin', '/admin/pedidos', '/admin/notificacoes', '/admin/ligadores']
 
 export default function AdminLayout() {
   const { user, logout } = useAuth()
@@ -36,6 +40,15 @@ export default function AdminLayout() {
     const t = setInterval(ler, 15000)
     return () => clearInterval(t)
   }, [pathname])
+
+  const [maisAberto, setMaisAberto] = useState(false)
+  useEffect(() => setMaisAberto(false), [pathname])
+  useTravaScroll(maisAberto)
+  useVoltarFecha(maisAberto, () => setMaisAberto(false))
+  const atual = itens.find((i) => ativo(i.to, i.end))
+  const maisAtivo = !!atual && !PRINCIPAIS.includes(atual.to)
+  // Com o "Mais" aberto, substitui a entrada extra do histórico (a do overlay).
+  const ir = (to) => { navigate(to, { replace: maisAberto }); setMaisAberto(false) }
 
   return (
     <div className="adm">
@@ -79,6 +92,47 @@ export default function AdminLayout() {
           <button type="button" className="adm__logout" onClick={logout}><Logout size={15} /> <span>Sair</span></button>
         </div>
       </aside>
+
+      <header className="adm__appbar">
+        <span className="adm__brand-mark">VS</span>
+        <h1 className="adm__appbar-tit">{atual?.label || 'Painel'}</h1>
+      </header>
+
+      <nav className="adm__tabbar" aria-label="Navegação">
+        {itens.filter((i) => PRINCIPAIS.includes(i.to)).map((i) => {
+          const Icon = i.icon
+          return (
+            <button key={i.to} type="button" className={ativo(i.to, i.end) && !maisAberto ? 'is-active' : ''} onClick={() => ir(i.to)}>
+              <span className="adm__tabbar-ic"><Icon size={22} />{i.badge && notif > 0 && <em>{notif}</em>}</span>
+              <span>{i.to === '/admin' ? 'Início' : i.label}</span>
+            </button>
+          )
+        })}
+        <button type="button" className={maisAtivo || maisAberto ? 'is-active' : ''} onClick={() => setMaisAberto((v) => !v)} aria-expanded={maisAberto}>
+          <span className="adm__tabbar-ic"><Menu size={22} /></span>
+          <span>Mais</span>
+        </button>
+      </nav>
+
+      {maisAberto && (
+        <div className="adm__sheet-fundo" onClick={() => setMaisAberto(false)}>
+          <div className="adm__sheet" role="dialog" aria-label="Menu" onClick={(e) => e.stopPropagation()}>
+            <span className="adm__sheet-alca" />
+            {itens.map((i) => {
+              const Icon = i.icon
+              return (
+                <button key={i.to} type="button" className={`adm__sheet-item ${ativo(i.to, i.end) ? 'is-active' : ''}`} onClick={() => ir(i.to)}>
+                  <Icon size={20} /><span>{i.label}</span>
+                  {i.badge && notif > 0 && <em className="adm__link-badge">{notif}</em>}
+                </button>
+              )
+            })}
+            <hr />
+            <button type="button" className="adm__sheet-item" onClick={() => ir('/')}><ExternalLink size={20} /><span>Ver site</span></button>
+            <button type="button" className="adm__sheet-item is-perigo" onClick={logout}><Logout size={20} /><span>Sair</span></button>
+          </div>
+        </div>
+      )}
 
       <main className="adm__main">
         <Outlet />

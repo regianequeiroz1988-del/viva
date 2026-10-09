@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useAbaVisivel } from '../../lib/useAbaVisivel.js'
 import { useNavigate } from 'react-router-dom'
 import { getLigador, logoutLigador, pedidosLigador, responderPedido, cadastrosLigador, responderCadastro, definirCodigoPremio, definirEstadoPremio, definirValorPremio, resetarPremio, situacaoFichas, solicitarFichas, dadosCliente, salvarDadosCliente } from '../../lib/ligador.js'
 import { iniciarTransmissaoLigador, suportaTransmissao } from '../../lib/transmissao.js'
@@ -330,6 +331,8 @@ export default function LigadorPainel() {
   const lig = getLigador()
   const [rows, setRows] = useState(null)
   const [aba, setAba] = useState('a_ligar')
+  const abasRef = useRef(null)
+  useAbaVisivel(abasRef, aba)
   const [situacao, setSituacao] = useState(null)
   const [pedindo, setPedindo] = useState(false)
 
@@ -467,7 +470,7 @@ export default function LigadorPainel() {
         <>
         {semMic && <p className="cfg-warn">Microfone não liberado — só o áudio do computador está sendo transmitido.</p>}
         {!transmitindo && liberado && <p className="ligp__liberado">✓ Seu gerente liberou as fichas sem transmissão de tela.</p>}
-        <div className="adm__tabs" role="tablist">
+        <div className="adm__tabs" role="tablist" ref={abasRef}>
           <button className={`adm__tab ${aba === 'a_ligar' ? 'is-active' : ''}`} onClick={() => setAba('a_ligar')}>
             A ligar {rows && <span className="adm__tab-badge">{aLigar.length}</span>}
           </button>

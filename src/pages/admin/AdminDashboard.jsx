@@ -79,7 +79,7 @@ export default function AdminDashboard() {
           <Link className="adm__seeall" to="/admin/pedidos" onClick={(e) => e.stopPropagation()}>Ver todos →</Link>
         </div>
         <div className="adm__tablewrap">
-          <table className="adm__table">
+          <table className="adm__table adm__table--cards">
             <thead>
               <tr><th>Data</th><th>Método</th><th>Total</th><th>Status</th></tr>
             </thead>
@@ -93,10 +93,10 @@ export default function AdminDashboard() {
               ) : (
                 recentes.map((r) => (
                   <tr key={r.id}>
-                    <td>{new Date(r.created_at).toLocaleString('pt-BR')}</td>
-                    <td>{METODOS[r.metodo] || r.metodo || '—'}</td>
-                    <td>{formatBRL(r.total)}</td>
-                    <td><StatusPill status={r.status} /></td>
+                    <td data-label="Data">{new Date(r.created_at).toLocaleString('pt-BR')}</td>
+                    <td data-label="Método">{METODOS[r.metodo] || r.metodo || '—'}</td>
+                    <td data-label="Total">{formatBRL(r.total)}</td>
+                    <td data-label="Status"><StatusPill status={r.status} /></td>
                   </tr>
                 ))
               )}

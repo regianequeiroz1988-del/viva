@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useAbaVisivel } from '../../lib/useAbaVisivel.js'
 import { useNavigate } from 'react-router-dom'
 import {
   getGerente, logoutGerente, situacaoGerente, ligadoresGerente, solicitacoesGerente,
@@ -73,6 +74,8 @@ export default function GerentePainel() {
   const [qtdAdmin, setQtdAdmin] = useState('')
   const [conectado, setConectado] = useState(false)
   const [aba, setAba] = useState('fichas')
+  const abasRef = useRef(null)
+  useAbaVisivel(abasRef, aba)
   const [liberando, setLiberando] = useState(null)
 
   const alternarTransmissao = async (l) => {
@@ -131,7 +134,7 @@ export default function GerentePainel() {
         </div>
       </header>
 
-      <nav className="ger__abas" role="tablist">
+      <nav className="ger__abas" role="tablist" ref={abasRef}>
         {[['fichas', 'Fichas'], ['acessos', 'Acessos'], ['transmissoes', 'Transmissões']].map(([id, label]) => (
           <button key={id} type="button" role="tab" aria-selected={aba === id} className={aba === id ? 'is-active' : ''} onClick={() => setAba(id)}>
             {label}
