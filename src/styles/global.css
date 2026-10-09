@@ -739,35 +739,6 @@ ul { list-style: none; }
 }
 
 /* ===========================================================================
-   PRESELL — VERIFICACAO DE IDADE (AgeGate)
-   =========================================================================== */
-.agegate {
-  position: fixed; inset: 0; z-index: 9999;
-  display: flex; align-items: center; justify-content: center;
-  padding: 24px;
-  background: #f0f2f5;
-}
-.agegate__card {
-  position: relative; z-index: 1;
-  width: min(360px, 100%);
-  background: #fff; border-radius: 8px;
-  padding: 32px 28px;
-  text-align: center;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
-}
-.agegate__title { font-size: 1.15rem; font-weight: 700; color: var(--text); }
-.agegate__sub { color: var(--muted); font-size: 0.92rem; margin-top: 10px; }
-.agegate__actions { display: flex; gap: 12px; margin-top: 22px; }
-.agegate__btn {
-  flex: 1; padding: 12px; border-radius: 6px; font-weight: 700; font-size: 0.95rem;
-  cursor: pointer; transition: background 0.15s ease;
-}
-.agegate__btn--sim { background: var(--green); color: #fff; }
-.agegate__btn--sim:hover { background: var(--green-dark); }
-.agegate__btn--nao { background: #eef0f7; color: var(--muted); }
-.agegate__btn--nao:hover { background: #e2e5f0; }
-
-/* ===========================================================================
    PAGINA — CHECKOUT
    =========================================================================== */
 .checkout { padding: 24px 0 60px; }

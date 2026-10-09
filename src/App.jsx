@@ -44,7 +44,6 @@ import GerenteLogin from './pages/gerente/GerenteLogin.jsx'
 import GerentePainel from './pages/gerente/GerentePainel.jsx'
 import RequireGerente from './components/RequireGerente.jsx'
 import AdminGerentes from './pages/admin/AdminGerentes.jsx'
-import AgeGate from './components/AgeGate.jsx'
 import { MetaPixelRouteTracker } from './lib/metapixel.js'
 import { iniciarGoogleTag } from './lib/googletag.js'
 
@@ -72,7 +71,7 @@ export default function App() {
   }, [noFooter])
 
   return (
-    <AgeGate>
+    <>
       <ScrollToTop />
       {/* Conteúdo do site — o overflow-x:clip fica AQUI (não no body), pra não
           quebrar o position:fixed da barra inferior no Safari/iOS. */}
@@ -142,6 +141,6 @@ export default function App() {
       )}
       {/* Meta Pixel: PageView nas trocas de rota (SPA). Inerte sem ID configurado. */}
       <MetaPixelRouteTracker />
-    </AgeGate>
+    </>
   )
 }
