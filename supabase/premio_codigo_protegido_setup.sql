@@ -34,11 +34,8 @@ create or replace function public._ligador_tem_premio(p_lig uuid, p_cpf text)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (
     select 1 from public.profiles pr
-     where regexp_replace(coalesce(pr.cpf, ''), '\D', '', 'g') = p_cpf
+     where pr.cpf = p_cpf
        and (pr.ligador_id = p_lig or exists (select 1 from public.pedidos p where p.user_id = pr.id and p.ligador_id = p_lig))
-  ) or exists (
-    select 1 from public.pedidos p
-     where p.ligador_id = p_lig and regexp_replace(coalesce(p.pagador->>'cpf', ''), '\D', '', 'g') = p_cpf
   )
 $$;
 revoke execute on function public._ligador_tem_premio(uuid, text) from public, anon, authenticated;
