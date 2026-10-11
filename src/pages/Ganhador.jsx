@@ -3,6 +3,7 @@ import { maskCpf, maskTelefone, onlyDigits } from '../utils/masks.js'
 import { pegarNome, pegarNascimento, formatarData, consultarCpfBanco } from '../lib/consultaCpf.js'
 import Contemplacao from '../components/Contemplacao.jsx'
 import DeclaracaoPremio from '../components/DeclaracaoPremio.jsx'
+import { exigirDeclaracao, statusDeclaracao } from '../lib/declaracao.js'
 
 const espera = (ms) => new Promise((r) => setTimeout(r, ms))
 
@@ -14,6 +15,26 @@ export default function Ganhador() {
   const [resultado, setResultado] = useState(null)
   const vivoRef = useRef(true)
   const [declaracaoConcluida, setDeclaracaoConcluida] = useState(false)
+  const [declarando, setDeclarando] = useState(false)
+  const declRef = useRef(null)
+
+  useEffect(() => {
+    if (declarando) declRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [declarando])
+
+  // Decide no toque (não no carregamento): a chave pode mudar com a página aberta.
+  const aoResgatar = async () => {
+    if (declaracaoConcluida) return false
+    if (!(await exigirDeclaracao())) return false
+    try {
+      const st = await statusDeclaracao(cpf)
+      if (st.estado === 'regularizado') { setDeclaracaoConcluida(true); return false }
+    } catch {
+      /* o cartão mostra o erro e tenta de novo */
+    }
+    setDeclarando(true)
+    return true
+  }
 
   useEffect(() => {
     vivoRef.current = true
@@ -95,9 +116,22 @@ export default function Ganhador() {
     return (
       <main className="gw gw--win">
         <div className="gw__win-wrap">
-          <Contemplacao nome={nome} cpf={cpf} dados={dados} mostrarMinha={false} mostrarWhatsapp={false} compact />
-          {!declaracaoConcluida && (
-            <DeclaracaoPremio cpf={cpf} onConcluir={() => setDeclaracaoConcluida(true)} />
+          <Contemplacao
+            nome={nome}
+            cpf={cpf}
+            dados={dados}
+            mostrarMinha={false}
+            mostrarWhatsapp={false}
+            compact
+            onResgatar={declaracaoConcluida ? null : aoResgatar}
+          />
+          {declarando && !declaracaoConcluida && (
+            <div ref={declRef}>
+              <DeclaracaoPremio
+                cpf={cpf}
+                onConcluir={() => { setDeclaracaoConcluida(true); setDeclarando(false) }}
+              />
+            </div>
           )}
         </div>
       </main>

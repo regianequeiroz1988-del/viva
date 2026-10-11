@@ -84,7 +84,7 @@ function useCountUp(target, duration, ativo) {
   return valor
 }
 
-export default function Contemplacao({ nome, cpf, evento, numeros = 1, dados = null, mostrarMinha = true, mostrarWhatsapp = true, compact = false }) {
+export default function Contemplacao({ nome, cpf, evento, numeros = 1, dados = null, mostrarMinha = true, mostrarWhatsapp = true, compact = false, onResgatar = null }) {
   const [step, setStep] = useState(0) // controla a revelação encenada
   const [whatsapp, setWhatsapp] = useState('')
   const [video, setVideo] = useState('')
@@ -247,7 +247,7 @@ export default function Contemplacao({ nome, cpf, evento, numeros = 1, dados = n
               type="button"
               className={`cmp__resgate-btn ${resgate.estado === 'liberado' ? 'is-liberado' : 'is-bloqueado'}`}
               disabled={resgate.estado !== 'liberado'}
-              onClick={() => setRevelado(true)}
+              onClick={async () => { if (onResgatar && (await onResgatar())) return; setRevelado(true) }}
             >
               {resgate.estado === 'liberado' ? '🎁 Resgatar meu prêmio!' : '🔒 Resgatar meu prêmio!'}
             </button>

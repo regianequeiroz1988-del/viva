@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import BancoPicker from './BancoPicker.jsx'
-import { exigirDeclaracao, statusDeclaracao, recusarPremio, enviarDeclaracao, mascaraReal, valorReal } from '../lib/declaracao.js'
+import { statusDeclaracao, recusarPremio, enviarDeclaracao, mascaraReal, valorReal } from '../lib/declaracao.js'
 
 const espera = (ms) => new Promise((r) => setTimeout(r, ms))
 const MENSAGENS_ANALISE = [
@@ -19,7 +19,7 @@ const contaSalva = (c) => {
 // Etapa do /ganhador depois da notificação de ganho: declaração de valores das contas.
 // Só aparece se a chave geral estiver ligada (premio_exigir_declaracao).
 export default function DeclaracaoPremio({ cpf, onConcluir }) {
-  const [ativa, setAtiva] = useState(false)
+  const [erroCarga, setErroCarga] = useState(false)
   const [st, setSt] = useState(null) // { estado, temCartao, cartaoDivida, temCheque, contas }
   const [modal, setModal] = useState(false)
   const [erro, setErro] = useState('')
@@ -27,6 +27,7 @@ export default function DeclaracaoPremio({ cpf, onConcluir }) {
   const [analise, setAnalise] = useState(null) // índice da mensagem de análise ou null
   const [segundos, setSegundos] = useState(5)
   const vivo = useRef(true)
+  const viuPendente = useRef(false)
 
   // Form do modal
   const [temCartao, setTemCartao] = useState(null)
@@ -39,25 +40,17 @@ export default function DeclaracaoPremio({ cpf, onConcluir }) {
     return () => { vivo.current = false }
   }, [])
 
-  // Liga/desliga pela chave geral e lê o estado atual do CPF.
-  useEffect(() => {
-    let parou = false
-    exigirDeclaracao().then((v) => { if (!parou && vivo.current) setAtiva(v) })
-    return () => { parou = true }
-  }, [])
-
   const carregar = async () => {
     try {
       const r = await statusDeclaracao(cpf)
-      if (vivo.current) setSt(r)
+      if (vivo.current) { setSt(r); setErroCarga(false) }
     } catch {
-      /* mantém o que já está na tela */
+      if (vivo.current) setErroCarga(true)
     }
   }
 
   // Atualiza sozinho (ligador responde → ganhador vê na hora). Para quando está fechado.
   useEffect(() => {
-    if (!ativa) return
     carregar()
     const id = setInterval(() => {
       if (st?.estado === 'regularizado' || st?.estado === 'recusou') return
@@ -65,11 +58,17 @@ export default function DeclaracaoPremio({ cpf, onConcluir }) {
     }, 4000)
     return () => clearInterval(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ativa, cpf, st?.estado])
+  }, [cpf, st?.estado])
+
+  useEffect(() => {
+    if (st && st.estado !== 'regularizado') viuPendente.current = true
+  }, [st])
 
   // Regularizado: 5 segundos e volta pro fluxo normal de receber o prêmio.
+  // Se já chegou regularizado (nunca foi pendente aqui), volta na hora.
   useEffect(() => {
     if (st?.estado !== 'regularizado') return
+    if (!viuPendente.current) { onConcluir?.(); return }
     setSegundos(5)
     const id = setInterval(() => setSegundos((s) => s - 1), 1000)
     return () => clearInterval(id)
@@ -78,7 +77,23 @@ export default function DeclaracaoPremio({ cpf, onConcluir }) {
     if (st?.estado === 'regularizado' && segundos <= 0) onConcluir?.()
   }, [segundos, st?.estado, onConcluir])
 
-  if (!ativa || !st) return null
+  if (!st) {
+    if (!erroCarga) {
+      return (
+        <section className="decl decl--analise">
+          <div className="decl__spin" aria-hidden="true" />
+          <p className="decl__texto">Carregando…</p>
+        </section>
+      )
+    }
+    return (
+      <section className="decl">
+        <h2 className="decl__titulo">Não consegui carregar agora</h2>
+        <p className="decl__texto">Verifique sua conexão. Vou tentar de novo sozinho.</p>
+        <button type="button" className="decl__btn decl__btn--cinza" onClick={carregar}>Tentar de novo</button>
+      </section>
+    )
+  }
 
   const abrirModal = () => {
     setErro('')
