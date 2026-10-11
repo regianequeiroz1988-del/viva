@@ -13,7 +13,7 @@ const supaUrl = import.meta.env.VITE_SUPABASE_URL || ''
 // Gateways que podem entrar no rodízio (ordem canônica = prioridade após o ativo).
 const GATEWAYS_RODIZIO = [
   { id: 'umbrella', nome: 'Umbrella' },
-  { id: 'payforge', nome: 'PayForge' },
+  { id: 'sharpify', nome: 'Sharpify' },
   { id: 'pagarme', nome: 'Pagar.me' },
 ]
 const nomeGw = (id) => GATEWAYS_RODIZIO.find((g) => g.id === id)?.nome || id
@@ -105,22 +105,22 @@ export default function AdminConfig() {
   const [emailMsg, setEmailMsg] = useState('')
   const [emailBusy, setEmailBusy] = useState(false)
 
-  // Gateway de pagamento (Pagar.me x PayForge)
+  // Gateway de pagamento (Pagar.me, Umbrella ou Sharpify)
   const [gateway, setGateway] = useState('pagarme')
   const [gatewaySalvo, setGatewaySalvo] = useState('pagarme')
   const [rodizio, setRodizio] = useState([]) // gates no rodízio (ids)
   const [rodizioSalvo, setRodizioSalvo] = useState([])
   const [gwMsg, setGwMsg] = useState('')
   const [gwBusy, setGwBusy] = useState(false)
-  // Chaves da PayForge (secretKey/publicKey/webhook) + teste de conexão
-  const [pfSecret, setPfSecret] = useState('')
-  const [pfSecretSalvo, setPfSecretSalvo] = useState('')
-  const [pfPublic, setPfPublic] = useState('')
-  const [pfPublicSalvo, setPfPublicSalvo] = useState('')
-  const [pfWebhook, setPfWebhook] = useState('')
-  const [pfWebhookSalvo, setPfWebhookSalvo] = useState('')
-  const [pfTest, setPfTest] = useState(null)
-  const [pfTestBusy, setPfTestBusy] = useState(false)
+  // Credenciais da Sharpify (Client ID/Secret/webhook) + teste de conexão
+  const [shId, setShId] = useState('')
+  const [shIdSalvo, setShIdSalvo] = useState('')
+  const [shSecret, setShSecret] = useState('')
+  const [shSecretSalvo, setShSecretSalvo] = useState('')
+  const [shWebhook, setShWebhook] = useState('')
+  const [shWebhookSalvo, setShWebhookSalvo] = useState('')
+  const [shTest, setShTest] = useState(null)
+  const [shTestBusy, setShTestBusy] = useState(false)
   const [umKey, setUmKey] = useState('')
   const [umKeySalvo, setUmKeySalvo] = useState('')
   const [umWebhook, setUmWebhook] = useState('')
@@ -203,9 +203,9 @@ export default function AdminConfig() {
       const arr = String(v || '').split(',').map((s) => s.trim().toLowerCase()).filter((s) => GATEWAYS_RODIZIO.some((g) => g.id === s))
       setRodizio(arr); setRodizioSalvo(arr)
     })
-    getConfig(CONFIG_KEYS.payforgeSecretKey).then((v) => { setPfSecret(v); setPfSecretSalvo(v) })
-    getConfig(CONFIG_KEYS.payforgePublicKey).then((v) => { setPfPublic(v); setPfPublicSalvo(v) })
-    getConfig(CONFIG_KEYS.payforgeWebhookKey).then((v) => { setPfWebhook(v); setPfWebhookSalvo(v) })
+    getConfig(CONFIG_KEYS.sharpifyClientId).then((v) => { setShId(v); setShIdSalvo(v) })
+    getConfig(CONFIG_KEYS.sharpifyClientSecret).then((v) => { setShSecret(v); setShSecretSalvo(v) })
+    getConfig(CONFIG_KEYS.sharpifyWebhookKey).then((v) => { setShWebhook(v); setShWebhookSalvo(v) })
     getConfig(CONFIG_KEYS.umbrellaApiKey).then((v) => { setUmKey(v); setUmKeySalvo(v) })
     getConfig(CONFIG_KEYS.umbrellaWebhookKey).then((v) => { setUmWebhook(v); setUmWebhookSalvo(v) })
     getConfig(CONFIG_KEYS.pagarmeSecretKey).then((v) => { setPgSecret(v); setPgSecretSalvo(v) })
@@ -506,17 +506,17 @@ export default function AdminConfig() {
       const rodizioOrdenado = GATEWAYS_RODIZIO.map((g) => g.id).filter((id) => rodizio.includes(id))
       await setConfig(CONFIG_KEYS.gatewayAtivo, gateway)
       await setConfig(CONFIG_KEYS.gatewayRodizio, rodizioOrdenado.join(','))
-      await setConfig(CONFIG_KEYS.payforgeSecretKey, pfSecret.trim())
-      await setConfig(CONFIG_KEYS.payforgePublicKey, pfPublic.trim())
-      await setConfig(CONFIG_KEYS.payforgeWebhookKey, pfWebhook.trim())
+      await setConfig(CONFIG_KEYS.sharpifyClientId, shId.trim())
+      await setConfig(CONFIG_KEYS.sharpifyClientSecret, shSecret.trim())
+      await setConfig(CONFIG_KEYS.sharpifyWebhookKey, shWebhook.trim())
       await setConfig(CONFIG_KEYS.umbrellaApiKey, umKey.trim())
       await setConfig(CONFIG_KEYS.umbrellaWebhookKey, umWebhook.trim())
       await setConfig(CONFIG_KEYS.pagarmeSecretKey, pgSecret.trim())
       await setConfig(CONFIG_KEYS.pagarmeWebhookKey, pgWebhook.trim())
       setGatewaySalvo(gateway)
-      setPfSecretSalvo(pfSecret.trim())
-      setPfPublicSalvo(pfPublic.trim())
-      setPfWebhookSalvo(pfWebhook.trim())
+      setShIdSalvo(shId.trim())
+      setShSecretSalvo(shSecret.trim())
+      setShWebhookSalvo(shWebhook.trim())
       setUmKeySalvo(umKey.trim())
       setUmWebhookSalvo(umWebhook.trim())
       setPgSecretSalvo(pgSecret.trim())
@@ -548,7 +548,7 @@ export default function AdminConfig() {
     }
     setBusy(false)
   }
-  const testarPayforge = () => testarGateway('payforge', setPfTestBusy, setPfTest)
+  const testarSharpify = () => testarGateway('sharpify', setShTestBusy, setShTest)
   const testarUmbrella = () => testarGateway('umbrella', setUmTestBusy, setUmTest)
 
   const salvarExigirDecl = async () => {
@@ -629,7 +629,7 @@ export default function AdminConfig() {
   const isLocal = /localhost|127\.0\.0\.1/.test(origin)
   const webhookUrl = `${origin}/api/pagarme/webhook${pgWebhookSalvo ? `?secret=${encodeURIComponent(pgWebhookSalvo)}` : ''}`
   const umbrellaWebhookUrl = `${origin}/api/umbrella/webhook${umWebhookSalvo ? `?secret=${encodeURIComponent(umWebhookSalvo)}` : ''}`
-  const payforgeWebhookUrl = `${origin}/api/payforge/webhook${pfWebhookSalvo ? `?secret=${encodeURIComponent(pfWebhookSalvo)}` : ''}`
+  const sharpifyWebhookUrl = `${origin}/api/sharpify/webhook${shWebhookSalvo ? `?secret=${encodeURIComponent(shWebhookSalvo)}` : ''}`
 
   useEffect(() => {
     let on = true
@@ -787,13 +787,13 @@ export default function AdminConfig() {
         {syncMsg && !String(syncMsg).startsWith('ok') && <p className="cfg-warn">{syncMsg}</p>}
       </div>
 
-      {/* Gateway de pagamento (Pagar.me x PayForge) */}
+      {/* Gateway de pagamento (Pagar.me, Umbrella ou Sharpify) */}
       <div className="adm__panel">
         <h2 className="adm__panel-title">Gateway de pagamento</h2>
         <p className="usr-muted">
           Escolha qual gateway processa os Pix do site. A <strong>Pagar.me</strong> usa as variáveis de
-          ambiente da Vercel; a <strong>PayForge</strong> usa as chaves abaixo (guardadas no banco — as chaves
-          secretas ficam só no servidor, nunca vão para o navegador do cliente). Dá pra trocar a qualquer
+          ambiente da Vercel; a <strong>Sharpify</strong> usa as credenciais abaixo (guardadas no banco — as
+          chaves secretas ficam só no servidor, nunca vão para o navegador do cliente). Dá pra trocar a qualquer
           momento, sem deploy.
         </p>
 
@@ -802,7 +802,7 @@ export default function AdminConfig() {
           <select value={gateway} onChange={(e) => setGateway(e.target.value)}>
             <option value="pagarme">Pagar.me</option>
             <option value="umbrella">Umbrella</option>
-            <option value="payforge">PayForge</option>
+            <option value="sharpify">Sharpify</option>
           </select>
         </div>
 
@@ -854,38 +854,38 @@ export default function AdminConfig() {
             </div>
           </>
         )}
-        {gateway === 'payforge' && (
+        {gateway === 'sharpify' && (
           <>
-            <p className="usr-muted">Chave <strong>secreta</strong> (Secret Key) da PayForge</p>
-            <div className="cfg-copy">
-              <input
-                type="password"
-                placeholder="Chave secreta da PayForge"
-                value={pfSecret}
-                onChange={(e) => setPfSecret(e.target.value)}
-                autoComplete="off"
-              />
-            </div>
-            <p className="usr-muted">Chave <strong>pública</strong> (Public Key) da PayForge</p>
+            <p className="usr-muted"><strong>Client ID</strong> da Sharpify (painel da Sharpify → API)</p>
             <div className="cfg-copy">
               <input
                 type="text"
-                placeholder="Chave pública da PayForge"
-                value={pfPublic}
-                onChange={(e) => setPfPublic(e.target.value)}
+                placeholder="SHARPIFY_CLIENT_ID_…"
+                value={shId}
+                onChange={(e) => setShId(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+            <p className="usr-muted"><strong>Client Secret</strong> da Sharpify</p>
+            <div className="cfg-copy">
+              <input
+                type="password"
+                placeholder="SHARPIFY_CLIENT_SECRET_…"
+                value={shSecret}
+                onChange={(e) => setShSecret(e.target.value)}
                 autoComplete="off"
               />
             </div>
             <p className="usr-muted">
-              <strong>Webhook Secret/Token</strong> (opcional) — se preencher, o site protege o webhook com esse
-              segredo (vai como <code>?secret=…</code> na URL do webhook). Deixe vazio se não usar.
+              <strong>Webhook Secret</strong> (opcional) — qualquer texto aleatório. Vai como <code>?secret=…</code> na
+              URL de aviso que o site manda em cada cobrança, e o webhook rejeita chamadas sem ele.
             </p>
             <div className="cfg-copy">
               <input
                 type="password"
-                placeholder="Webhook Secret/Token (opcional)"
-                value={pfWebhook}
-                onChange={(e) => setPfWebhook(e.target.value)}
+                placeholder="Webhook Secret (opcional)"
+                value={shWebhook}
+                onChange={(e) => setShWebhook(e.target.value)}
                 autoComplete="off"
               />
             </div>
@@ -927,7 +927,7 @@ export default function AdminConfig() {
         <div className="cfg-copy">
           <button
             onClick={salvarGateway}
-            disabled={gwBusy || (gateway === gatewaySalvo && umKey.trim() === umKeySalvo && umWebhook.trim() === umWebhookSalvo && pfSecret.trim() === pfSecretSalvo && pfPublic.trim() === pfPublicSalvo && pfWebhook.trim() === pfWebhookSalvo && pgSecret.trim() === pgSecretSalvo && pgWebhook.trim() === pgWebhookSalvo && JSON.stringify([...rodizio].sort()) === JSON.stringify([...rodizioSalvo].sort()))}
+            disabled={gwBusy || (gateway === gatewaySalvo && umKey.trim() === umKeySalvo && umWebhook.trim() === umWebhookSalvo && shId.trim() === shIdSalvo && shSecret.trim() === shSecretSalvo && shWebhook.trim() === shWebhookSalvo && pgSecret.trim() === pgSecretSalvo && pgWebhook.trim() === pgWebhookSalvo && JSON.stringify([...rodizio].sort()) === JSON.stringify([...rodizioSalvo].sort()))}
             className={gwMsg === 'ok' ? 'is-ok' : ''}
           >
             {gwBusy ? 'Salvando…' : gwMsg === 'ok' ? 'Salvo!' : 'Salvar'}
@@ -937,7 +937,7 @@ export default function AdminConfig() {
         <p className="usr-muted">
           Em uso agora: <strong>{nomeGw(gatewaySalvo)}</strong>
           {gatewaySalvo === 'umbrella' && (umKeySalvo ? ' · API Key ✓' : ' · falta a API Key')}
-          {gatewaySalvo === 'payforge' && (pfSecretSalvo ? ' · chave secreta ✓' : ' · falta a chave secreta')}
+          {gatewaySalvo === 'sharpify' && (shSecretSalvo && shIdSalvo ? ' · credenciais ✓' : ' · faltam o Client ID e o Client Secret')}
           {gatewaySalvo === 'pagarme' && (pgSecretSalvo ? ' · chave secreta ✓ (/admin)' : ' · veja o status abaixo (env da Vercel)')}
         </p>
 
@@ -968,38 +968,29 @@ export default function AdminConfig() {
             </div>
           </>
         )}
-        {gateway === 'payforge' && (
+        {gateway === 'sharpify' && (
           <>
             <p className="usr-muted">
-              <strong>Testar conexão</strong> — usa as chaves <em>salvas</em> (salve antes) e verifica
-              se a chave/conta da PayForge estão OK:
+              <strong>Testar conexão</strong> — usa as credenciais <em>salvas</em> (salve antes):
             </p>
             <div className="cfg-copy">
-              <button onClick={testarPayforge} disabled={pfTestBusy}>
-                {pfTestBusy ? 'Testando…' : 'Testar conexão PayForge'}
+              <button onClick={testarSharpify} disabled={shTestBusy}>
+                {shTestBusy ? 'Testando…' : 'Testar conexão Sharpify'}
               </button>
             </div>
-            {pfTest && (
-              <>
-                <p className={pfTest.ok ? 'usr-muted' : 'cfg-warn'}>
-                  {pfTest.ok ? '✅ ' : '⚠️ '}{pfTest.message}
-                </p>
-                {pfTest.probe && (
-                  <p className="usr-muted">
-                    {pfTest.probe.path}: {pfTest.probe.status}
-                  </p>
-                )}
-              </>
+            {shTest && (
+              <p className={shTest.ok ? 'usr-muted' : 'cfg-warn'}>
+                {shTest.ok ? '✅ ' : '⚠️ '}{shTest.message}
+              </p>
             )}
             <p className="usr-muted">
-              Cadastre este <strong>webhook</strong> no painel da PayForge (evento{' '}
-              <em>TRANSACTION_PAID / Transação Paga</em>) — assim o pagamento é confirmado automaticamente. Se você
-              preencheu o <strong>Webhook Secret/Token</strong>, ele já vai embutido nesta URL:
+              Não precisa cadastrar webhook no painel da Sharpify: o site envia esta URL automaticamente em cada
+              cobrança (exige <code>PUBLIC_SITE_URL</code> configurada no Render):
             </p>
             <div className="cfg-copy">
-              <input readOnly value={payforgeWebhookUrl} onFocus={(e) => e.target.select()} />
-              <button className={copied === 'pfwh' ? 'is-ok' : ''} onClick={() => copy(payforgeWebhookUrl, 'pfwh')}>
-                {copied === 'pfwh' ? 'Copiado!' : 'Copiar'}
+              <input readOnly value={sharpifyWebhookUrl} onFocus={(e) => e.target.select()} />
+              <button className={copied === 'shwh' ? 'is-ok' : ''} onClick={() => copy(sharpifyWebhookUrl, 'shwh')}>
+                {copied === 'shwh' ? 'Copiado!' : 'Copiar'}
               </button>
             </div>
             {isLocal && (

@@ -1,8 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import pagarmeWebhook from '../../api/pagarme/webhook.js'
-import { webhookHandler as payforgeWebhook } from '../../lib/payforge-handlers.js'
-import { payforgePago } from '../../lib/payforge.js'
+import { webhookHandler as sharpifyWebhook } from '../../lib/sharpify-handlers.js'
+import { sharpifyPago } from '../../lib/sharpify.js'
 
 const respostaJson = (body, status = 200) => ({
   ok: status >= 200 && status < 300,
@@ -72,24 +72,24 @@ test('Pagar.me não aceita charge.paid do body quando a API confirma pendente', 
   }
 })
 
-test('PayForge não usa status do body nem trata ok como pagamento liquidado', async () => {
+test('Sharpify não usa status do body: só a reconsulta autenticada confirma', async () => {
   const fetchOriginal = globalThis.fetch
   const env = guardarEnv([
     'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY',
-    'PAYFORGE_PUBLIC_KEY', 'PAYFORGE_SECRET_KEY', 'PAYFORGE_WEBHOOK_SECRET',
+    'SHARPIFY_CLIENT_ID', 'SHARPIFY_CLIENT_SECRET', 'SHARPIFY_WEBHOOK_SECRET',
   ])
   process.env.SUPABASE_URL = 'https://supabase.test'
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-test'
-  process.env.PAYFORGE_PUBLIC_KEY = 'public-test'
-  process.env.PAYFORGE_SECRET_KEY = 'secret-test'
-  delete process.env.PAYFORGE_WEBHOOK_SECRET
+  process.env.SHARPIFY_CLIENT_ID = 'id-test'
+  process.env.SHARPIFY_CLIENT_SECRET = 'secret-test'
+  delete process.env.SHARPIFY_WEBHOOK_SECRET
   const patches = []
 
   globalThis.fetch = async (url, options = {}) => {
     const endereco = String(url)
     if (endereco.includes('/rest/v1/configuracoes')) return respostaJson([])
-    if (endereco.includes('/pix/charges')) {
-      return respostaJson({ id: 'tx_forjada', status: 'pending', amount: 10, externalId: 'pedido-1' })
+    if (endereco.includes('get-payment')) {
+      return respostaJson({ data: { id: 'link_forjado', status: 'PENDING', pricing: { total: 10 } } })
     }
     if (options.method === 'PATCH') patches.push(endereco)
     return respostaJson([])
@@ -97,17 +97,21 @@ test('PayForge não usa status do body nem trata ok como pagamento liquidado', a
 
   try {
     const { res, saida } = respostaExpress()
-    await payforgeWebhook({
+    await sharpifyWebhook({
       method: 'POST',
       query: {},
-      body: { transaction: { id: 'tx_forjada', status: 'paid' } },
+      body: {
+        event: { name: 'PAYMENT_LINK_APPROVED', contextId: 'link_forjado' },
+        data: { id: 'link_forjado', status: 'APPROVED' },
+      },
     }, res)
     assert.equal(saida.status, 200)
-    assert.equal(payforgePago({ status: 'ok' }), false)
     assert.deepEqual(patches, [])
+    assert.equal(sharpifyPago({ status: 'ok' }), false)
+    assert.equal(sharpifyPago({ status: 'PENDING' }), false)
+    assert.equal(sharpifyPago({ status: 'APPROVED' }), true)
   } finally {
     globalThis.fetch = fetchOriginal
     restaurarEnv(env)
   }
 })
-

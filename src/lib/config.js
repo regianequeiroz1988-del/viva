@@ -20,15 +20,15 @@ export const CONFIG_KEYS = {
   premioVivaSorte: 'premio_viva_sorte', // (legado, não usado)
   utmifyApiToken: 'utmify_api_token', // token da API da UTMify (envio de vendas pendente/pago pelo backend)
   utmifyTestCpfs: 'utmify_test_cpfs', // CPFs/e-mails de teste — compras vão à UTMify como isTest (não contam)
-  // Gateway de pagamento ativo: 'pagarme' (padrão) ou 'payforge'.
+  // Gateway de pagamento ativo: 'pagarme' (padrão), 'umbrella' ou 'sharpify'.
   gatewayAtivo: 'gateway_ativo',
-  // Rodízio/failover de gateways: lista CSV ordenada (ex.: 'payforge,pagarme').
+  // Rodízio/failover de gateways: lista CSV ordenada (ex.: 'sharpify,pagarme').
   // Se a gate falha ao gerar o Pix, o site tenta a próxima da lista automaticamente,
   // e o cliente pode trocar manualmente na tela do Pix. Vazio = sem rodízio.
   gatewayRodizio: 'gateway_rodizio',
-  payforgePublicKey: 'payforge_public_key',
-  payforgeSecretKey: 'payforge_secret_key',
-  payforgeWebhookKey: 'payforge_webhook_key',
+  sharpifyClientId: 'sharpify_client_id_key',
+  sharpifyClientSecret: 'sharpify_client_secret_key',
+  sharpifyWebhookKey: 'sharpify_webhook_key',
   umbrellaApiKey: 'umbrella_api_key',
   umbrellaWebhookKey: 'umbrella_webhook_key',
   // Pagar.me também configurável pelo /admin (antes só via env na Vercel).

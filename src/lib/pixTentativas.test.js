@@ -106,7 +106,7 @@ test('webhook resolve cobrança antiga pela tabela imutável, não pelo charge a
         id: 'pedido-1',
         total: 5,
         status: 'pendente',
-        gateway: 'payforge',
+        gateway: 'sharpify',
         pagarme_charge_id: 'charge-mais-recente',
       }])
     }

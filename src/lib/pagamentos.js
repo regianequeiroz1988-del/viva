@@ -8,7 +8,7 @@ const onlyDigits = (v) => String(v || '').replace(/\D/g, '')
 const demoPermitido = import.meta.env?.DEV === true
 
 // Gateways suportados, em ordem canônica (define a prioridade do rodízio).
-export const GATEWAYS = ['umbrella', 'payforge', 'pagarme']
+export const GATEWAYS = ['umbrella', 'sharpify', 'pagarme']
 
 // Só os gateways suportados — evita montar caminho arbitrário em /api/<gw>/...
 const gw = (g) => (GATEWAYS.includes(g) ? g : 'pagarme')
@@ -23,7 +23,7 @@ async function cabecalhoDeSessao() {
 /**
  * Monta a lista ordenada do rodízio a partir das configs do /admin.
  * - `ativo`: gateway principal (começa por ele).
- * - `rodizioCsv`: lista CSV das gates que participam (ex.: 'payforge,pagarme').
+ * - `rodizioCsv`: lista CSV das gates que participam (ex.: 'sharpify,pagarme').
  * Retorna a lista deduplicada, começando pelo gateway ativo. Se o rodízio estiver
  * vazio, devolve só o gateway ativo (comportamento antigo, sem failover).
  */

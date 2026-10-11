@@ -266,7 +266,7 @@ export default function Checkout() {
       return
     }
     // Abaixo de R$ 5,00 a taxa fixa por transação não compensa.
-    if ((gateway === 'payforge' || gateway === 'umbrella') && totalFinal < 5) {
+    if ((gateway === 'sharpify' || gateway === 'umbrella') && totalFinal < 5) {
       setErro('O valor mínimo para pagamento via Pix é R$ 5,00. Adicione mais números para continuar.')
       return
     }
@@ -279,7 +279,7 @@ export default function Checkout() {
       pedido = await criarPedido()
       // IMPORTANTE: o valor cobrado é a SOMA dos itens enviados. Por isso a oferta
       // relâmpago (upsell) precisa entrar no payload, senão o Pix sairia só com o
-      // valor dos títulos. O failover percorre o rodízio (PayForge → Pagar.me)
+      // valor dos títulos. O failover percorre o rodízio (Sharpify → Pagar.me)
       // até uma gate conseguir gerar — se a 1ª recusar (ex.: teto de valor no Pix),
       // já tenta a próxima sozinho.
       const dados = await criarPagamentoPixFailover(montarPayloadPix(pedido?.id, false), gateways, 0)

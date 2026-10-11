@@ -22,7 +22,7 @@ import authCpfHandler from './api/auth-cpf.js';
 import visitaHandler from './api/visita.js';
 import sorteiosHandler from './api/sorteios.js';
 import adminHandler from './api/admin/[action].js';
-import payforgeHandler from './api/payforge/[action].js';
+import sharpifyHandler from './api/sharpify/[action].js';
 import umbrellaHandler from './api/umbrella/[action].js';
 
 // Pagar.me handlers
@@ -48,10 +48,9 @@ app.all('/api/admin/:action', (req, res) => {
   adminHandler(req, res);
 });
 
-// PayForge (Dynamic actions)
-app.all('/api/payforge/:action', (req, res) => {
+app.all('/api/sharpify/:action', (req, res) => {
   req.query = { ...req.query, action: req.params.action };
-  payforgeHandler(req, res);
+  sharpifyHandler(req, res);
 });
 
 app.all('/api/umbrella/:action', (req, res) => {

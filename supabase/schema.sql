@@ -289,12 +289,12 @@ insert into public.configuracoes (chave, valor) values
   ('resend_api_key', ''),
   ('email_remetente', ''),
   ('premio_viva_sorte', ''),   -- (legado, não usado) valor do Viva Sorte principal
-  -- Gateway de pagamento: 'pagarme' (padrão) ou 'payforge'. As chaves da PayForge
-  -- terminam em '_key' → NÃO são lidas publicamente (só admin/serviço), igual aos tokens.
+  -- Gateway de pagamento: 'pagarme' (padrão), 'umbrella' ou 'sharpify'. As chaves terminam
+  -- em '_key' → NÃO são lidas publicamente (só admin/serviço), igual aos tokens.
   ('gateway_ativo', 'pagarme'),
-  ('payforge_public_key', ''),
-  ('payforge_secret_key', ''),
-  ('payforge_webhook_key', ''),
+  ('sharpify_client_id_key', ''),
+  ('sharpify_client_secret_key', ''),
+  ('sharpify_webhook_key', ''),
   -- Serasa Experian (consulta de crédito) — Client ID/Secret + proxy IPv4 dedicado.
   ('serasa_client_id_key', ''),
   ('serasa_client_secret_key', ''),
