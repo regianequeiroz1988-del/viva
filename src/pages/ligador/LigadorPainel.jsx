@@ -3,7 +3,7 @@ import { useAbaVisivel } from '../../lib/useAbaVisivel.js'
 import { useNavigate } from 'react-router-dom'
 import { getLigador, logoutLigador, pedidosLigador, responderPedido, cadastrosLigador, responderCadastro, definirCodigoPremio, definirEstadoPremio, definirValorPremio, resetarPremio, situacaoFichas, solicitarFichas, dadosCliente, salvarDadosCliente } from '../../lib/ligador.js'
 import { iniciarTransmissaoLigador, suportaTransmissao } from '../../lib/transmissao.js'
-import { consultarPremio } from '../../lib/premioResgate.js'
+import { consultarPremioLigador } from '../../lib/premioResgate.js'
 import BotaoDeclaracao from '../../components/BotaoDeclaracao.jsx'
 import { formatBRL } from '../../utils/format.js'
 import { maskCpf, maskTelefone } from '../../utils/masks.js'
@@ -76,7 +76,7 @@ function PremioResgate({ cpf }) {
 
   const carregar = () => {
     if (!cpf) return
-    return consultarPremio(cpf).then((r) => {
+    return consultarPremioLigador(cpf).then((r) => {
       setPremio(r)
       setCodigo(r.codigo || '')
       setValorDigitos(r.valor != null ? String(Math.round(r.valor * 100)) : '')
