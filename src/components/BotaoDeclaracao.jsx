@@ -117,7 +117,7 @@ export default function BotaoDeclaracao({ cpf }) {
         </ul>
       )}
 
-      {(estado === 'enviada' || estado === 'pendente' || estado === 'regularizado') && (
+      {(d.temCartao !== null || d.temCheque !== null) && (estado === 'enviada' || estado === 'pendente' || estado === 'regularizado') && (
         <p className="decl-ficha__cartao">
           Cartão de crédito: {d.temCartao ? (d.cartaoDivida ? 'sim, com dívida' : 'sim, sem dívida') : 'não'}
           {' · '}Cheque especial/empréstimo: {d.temCheque ? 'sim' : 'não'}

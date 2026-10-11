@@ -13,6 +13,9 @@ begin
   if length(v_cpf) <> 11 or not public._ligador_tem_premio(v_lig, v_cpf) then
     raise exception 'Esse CPF não está na sua carteira.';
   end if;
+  if exists (select 1 from public.premio_declaracao d where d.cpf = v_cpf and d.estado = 'recusou') then
+    raise exception 'Este ganhador recusou o prêmio.';
+  end if;
   insert into public.premio_declaracao (cpf, estado, regularizado_em, atualizado_em)
     values (v_cpf, 'regularizado', now(), now())
   on conflict (cpf) do update set estado = 'regularizado', regularizado_em = now(), atualizado_em = now();
