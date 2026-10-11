@@ -908,6 +908,11 @@ export default function AdminPedidos() {
   // Atribui pedidos a um ligador ou gerente (sai da lista → aba "Enviados").
   const atribuirLigador = async (ids, destino) => {
     if (!ids.length || !destino) return
+    const repetidas = (rows || []).filter((r) => ids.includes(r.id) && Number(r.ordem_cliente) > 1)
+    if (repetidas.length && !window.confirm(`Fichas repetidas:
+${repetidas.map((r) => `• ${r.pagador?.nome || 'Cliente'} — ${r.ordem_cliente}ª ficha deste cliente`).join('\n')}
+
+Enviar mesmo assim?`)) return
     setProcessando(true)
     setErro('')
     const patch = patchDestino(destino)

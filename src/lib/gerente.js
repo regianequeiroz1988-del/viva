@@ -74,7 +74,7 @@ export async function pedirFichasAdmin(qtd) {
   return error ? { ok: false, error: error.message } : { ok: true }
 }
 
-// Fichas do estoque, uma por cliente: [{ tipo: 'pago'|'pendente'|'cadastro', id, nome, telefone, cidade, uf, total, created_at, qtd, pagos }]
+// Fichas do estoque, uma por Pix: [{ tipo: 'pago'|'pendente'|'cadastro', id, nome, telefone, cidade, uf, total, created_at, ordem }]
 export const estoqueGerente = () => lista('gerente_estoque')
 
 export async function enviarFichas(ligadorId, fichas) {

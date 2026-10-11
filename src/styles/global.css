@@ -3145,3 +3145,5 @@ body.tema-app .ntf__ok, body.tema-app .ligc__premio-salvar { background: var(--b
 .decl-ficha__erro { margin: 0; font-size: 0.82rem; color: #d23b4a; }
 .decl-ficha--pendente { border-color: rgba(210, 59, 74, 0.45); }
 .decl-ficha--regularizado { border-color: rgba(31, 168, 85, 0.45); }
+
+.ficha-rep { display: inline-block; margin-left: 8px; padding: 3px 10px; border-radius: 999px; background: #ffe9b8; color: #8a5a00; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.2px; vertical-align: middle; }

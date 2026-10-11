@@ -25,27 +25,6 @@ const fmtData = (iso) => {
   return `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
 }
 
-// Uma ficha por cliente: junta os Pix gerados pela mesma pessoa num cartão só.
-// O pedido pago representa a ficha (senão o mais recente); o banco mantém status/obs iguais em todos.
-function fichasPorCliente(pedidos) {
-  const grupos = new Map()
-  for (const p of pedidos) {
-    const k = p.user_id || p.id
-    if (!grupos.has(k)) grupos.set(k, [])
-    grupos.get(k).push(p)
-  }
-  return [...grupos.values()].map((g) => {
-    g.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    const pagos = g.filter((x) => x.status === 'pago')
-    return {
-      ...(pagos[0] || g[0]),
-      _qtd: g.length,
-      _pagos: pagos.length,
-      _valorPago: pagos.reduce((s, x) => s + (Number(x.total) || 0), 0),
-    }
-  })
-}
-
 function resumo(p) {
   const arr = Array.isArray(p?.itens) ? p.itens : []
   const sorteios = arr
@@ -313,6 +292,7 @@ function CardLigar({ p, onResponder, onAtualizar }) {
     <div className={`adm__pcard ligc ${finalizado ? `ligc--${p.ligador_status}` : emRetorno ? 'ligc--retorno' : ''}`}>
       <div className="adm__pcard-top">
         <strong className="adm__pcard-nome">{pag.nome || 'Cliente'}</strong>
+        {Number(p.ordem_cliente) > 1 && <span className="ficha-rep">{p.ordem_cliente}ª ficha deste cliente</span>}
         {ehCadastro ? <span className="adm__status adm__status--pend">Só cadastro</span> : <StatusPill status={p.status} />}
       </div>
 
@@ -323,13 +303,7 @@ function CardLigar({ p, onResponder, onAtualizar }) {
           <>
             <dt>Sorteio</dt><dd title={sorteios.join(' · ')}>{sorteios.length ? sorteios.join(' · ') : '—'}</dd>
             <dt>Números</dt><dd>{numeros || '—'}</dd>
-            <dt>{p._qtd > 1 ? (p.status === 'pago' ? 'Pix pago' : 'Último Pix') : 'Total'}</dt><dd>{formatBRL(p.total)}</dd>
-            {p._qtd > 1 && (
-              <>
-                <dt>Pix gerados</dt>
-                <dd>{p._qtd}×{p._pagos > 0 ? ` · ${p._pagos} pago${p._pagos > 1 ? 's' : ''} (${formatBRL(p._valorPago)})` : ' · nenhum pago'}</dd>
-              </>
-            )}
+            <dt>Total</dt><dd>{formatBRL(p.total)}</dd>
             <dt>Cidade</dt><dd>{p.cidade ? `${p.cidade}${p.uf ? '/' + p.uf : ''}` : '—'}</dd>
           </>
         )}
@@ -417,7 +391,7 @@ export default function LigadorPainel() {
       ligador_status: c.ligador_status,
       ligador_obs: c.ligador_obs,
     }))
-    setRows([...fichasPorCliente(pedidos), ...cadastrosComoCard])
+    setRows([...pedidos, ...cadastrosComoCard])
   }
   useEffect(() => {
     if (!podeVer) return

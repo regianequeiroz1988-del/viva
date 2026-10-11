@@ -57,6 +57,11 @@ export default function DistribuirFichas({ estoque, ligadores, onEnviado }) {
   const enviar = async () => {
     setErro('')
     setMsg('')
+    const repetidas = escolhidas.filter((f) => Number(f.ordem) > 1)
+    if (repetidas.length && !window.confirm(`Fichas repetidas:
+${repetidas.map((f) => `• ${f.nome || 'Sem nome'} — ${f.ordem}ª ficha deste cliente`).join('\n')}
+
+Enviar mesmo assim?`)) return
     setBusy(true)
     const r = await enviarFichas(ligador, escolhidas)
     setBusy(false)
@@ -104,7 +109,7 @@ export default function DistribuirFichas({ estoque, ligadores, onEnviado }) {
             <span className="ger__ficha-info">
               <span className={`lig-pill ${PILL[f.tipo]}`}>{ROTULO[f.tipo]}</span>
               <small>{f.total != null ? `${formatBRL(Number(f.total))} · ` : ''}{fmtData(f.created_at)}</small>
-              {f.qtd > 1 && <small className="ger__ficha-qtd">Gerou {f.qtd}× Pix{f.pagos > 0 ? ` · ${f.pagos} pago${f.pagos > 1 ? 's' : ''}` : ''}</small>}
+              {Number(f.ordem) > 1 && <small className="ficha-rep">{f.ordem}ª ficha deste cliente</small>}
             </span>
           </label>
         ))}
