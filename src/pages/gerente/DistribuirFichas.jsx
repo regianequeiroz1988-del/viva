@@ -104,6 +104,7 @@ export default function DistribuirFichas({ estoque, ligadores, onEnviado }) {
             <span className="ger__ficha-info">
               <span className={`lig-pill ${PILL[f.tipo]}`}>{ROTULO[f.tipo]}</span>
               <small>{f.total != null ? `${formatBRL(Number(f.total))} · ` : ''}{fmtData(f.created_at)}</small>
+              {f.qtd > 1 && <small className="ger__ficha-qtd">Gerou {f.qtd}× Pix{f.pagos > 0 ? ` · ${f.pagos} pago${f.pagos > 1 ? 's' : ''}` : ''}</small>}
             </span>
           </label>
         ))}
