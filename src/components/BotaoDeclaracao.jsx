@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { exigirDeclaracao, declaracaoDoLigador, marcarPendenciaLigador, regularizarLigador } from '../lib/declaracao.js'
+import { exigirDeclaracao, declaracaoDoLigador, marcarPendenciaLigador, regularizarLigador, dispensarDeclaracaoLigador } from '../lib/declaracao.js'
 import { formatBRL } from '../utils/format.js'
 
 // Botão da declaração de valores, dentro da ficha do ligador (por CPF).
@@ -56,6 +56,11 @@ export default function BotaoDeclaracao({ cpf }) {
   }
 
   const { estado, tevePendencia, contas } = d
+
+  const dispensar = () => {
+    if (!window.confirm('Liberar este CPF sem a declaração de valores? O ganhador recebe o código de resgate sem declarar.')) return
+    acao(dispensarDeclaracaoLigador)
+  }
 
   return (
     <div className={`decl-ficha decl-ficha--${estado}`}>
@@ -117,6 +122,12 @@ export default function BotaoDeclaracao({ cpf }) {
           Cartão de crédito: {d.temCartao ? (d.cartaoDivida ? 'sim, com dívida' : 'sim, sem dívida') : 'não'}
           {' · '}Cheque especial/empréstimo: {d.temCheque ? 'sim' : 'não'}
         </p>
+      )}
+
+      {(estado === 'aguardando' || estado === 'enviada' || estado === 'pendente') && (
+        <button type="button" className="decl-ficha__btn decl-ficha__btn--contorno" disabled={busy} onClick={dispensar}>
+          Dispensar declaração deste ganhador
+        </button>
       )}
 
       {erro && <p className="decl-ficha__erro" role="alert">{erro}</p>}

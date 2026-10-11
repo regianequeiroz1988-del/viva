@@ -74,6 +74,13 @@ export async function marcarPendenciaLigador(cpf) {
   if (error) throw new Error(error.message)
 }
 
+// Dispensa a declaração deste CPF (só da carteira do ligador): libera sem o ganhador declarar.
+export async function dispensarDeclaracaoLigador(cpf) {
+  const l = getLigador()
+  const { error } = await supabase.rpc('ligador_dispensar_declaracao', { p_token: l.token, p_cpf: onlyDigits(cpf) })
+  if (error) throw new Error(error.message)
+}
+
 // Verde (depois da pendência e da declaração completa): CPF liberado.
 export async function regularizarLigador(cpf) {
   const l = getLigador()
