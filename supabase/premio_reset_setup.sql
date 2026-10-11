@@ -11,6 +11,7 @@ begin
   if v_lig is null then raise exception 'token invalido'; end if;
   v_cpf := regexp_replace(coalesce(p_cpf, ''), '\D', '', 'g');
   if length(v_cpf) <> 11 then raise exception 'cpf invalido'; end if;
+  if not public._ligador_tem_premio(v_lig, v_cpf) then raise exception 'Esse CPF não está na sua carteira.'; end if;
   delete from public.premios_liberados where cpf = v_cpf;
 end; $$;
 grant execute on function public.ligador_resetar_premio(uuid, text) to anon, authenticated;
