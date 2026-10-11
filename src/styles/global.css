@@ -2829,3 +2829,319 @@ button, a, [role="button"], label, select, summary { touch-action: manipulation;
 @media (prefers-reduced-motion: reduce) {
   .adm__sheet, .adm__sheet-fundo, .admmodal__box, .adm .adm__bulkbar { animation: none; }
 }
+
+/* ===========================================================================
+   TEMA ESCURO "APP iOS" — só nas áreas internas (/admin, /ligador, /gerente).
+   O App.jsx põe a classe .tema-app no <body> nessas rotas. Paleta = modo escuro
+   do iOS (fundo preto, cartões grafite, azul/verde/vermelho do sistema).
+   =========================================================================== */
+body.tema-app {
+  --bg: #000000;
+  --surface: #1c1c1e;
+  --surface-2: #2c2c2e;
+  --text: #f5f5f7;
+  --muted: #98989f;
+  --border: #38383a;
+  --blue: #0a84ff;
+  --blue-dark: #0071e3;
+  --blue-light: rgba(10, 132, 255, 0.18);
+  --green: #30d158;
+  --green-dark: #30d158;
+  --yellow: #ffd60a;
+  --ios-orange: #ff9f0a;
+  --ios-red: #ff453a;
+  --ios-purple: #bf5af2;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --shadow-sm: none;
+  background: var(--bg);
+  color: var(--text);
+  color-scheme: dark;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+body.tema-app ::selection { background: rgba(10, 132, 255, 0.4); }
+
+/* Campos */
+body.tema-app input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+body.tema-app select,
+body.tema-app textarea {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: transparent;
+}
+body.tema-app input::placeholder, body.tema-app textarea::placeholder { color: #6e6e73; }
+body.tema-app input:focus, body.tema-app select:focus, body.tema-app textarea:focus {
+  outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-light);
+}
+body.tema-app .cfg-copy input, body.tema-app .admmodal__pixcopy-row input { background: var(--surface-2); color: var(--muted); }
+
+/* Barra lateral: vidro grafite, item ativo azul sólido (sem degradê/sombra) */
+body.tema-app .adm__side {
+  background: rgba(28, 28, 30, 0.72);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-right: 1px solid var(--border);
+  color: var(--muted);
+}
+body.tema-app .adm__brand-mark { background: var(--blue); box-shadow: none; }
+body.tema-app .adm__brand-plus { color: var(--blue); }
+body.tema-app .adm__brand-txt small, body.tema-app .adm__user-info small, body.tema-app .adm__nav-label { color: #6e6e73; }
+body.tema-app .adm__link { color: #c7c7cc; border-radius: 10px; }
+body.tema-app .adm__link:hover, body.tema-app .adm__back:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+body.tema-app .adm__link.is-active { background: var(--blue); box-shadow: none; color: #fff; }
+body.tema-app .adm__foot { border-top-color: var(--border); }
+body.tema-app .adm__back { color: #c7c7cc; }
+body.tema-app .adm__logout { color: var(--ios-red); }
+body.tema-app .adm__logout:hover { background: rgba(255, 69, 58, 0.14); color: var(--ios-red); }
+body.tema-app .adm__link-badge, body.tema-app .ger__abas-badge { background: var(--ios-red); }
+
+/* Títulos grandes estilo iOS */
+body.tema-app .adm__title { letter-spacing: -0.02em; }
+
+/* Cartões, painéis, tabelas: grafite, sem sombra, cantos maiores */
+body.tema-app .adm__card, body.tema-app .adm__panel, body.tema-app .adm__pcard,
+body.tema-app .usr-card, body.tema-app .trs__card, body.tema-app .lig-login__card,
+body.tema-app .ger__ficha, body.tema-app .admmodal__box {
+  background: var(--surface); border-color: transparent; box-shadow: none; border-radius: 16px;
+}
+body.tema-app .adm__card:hover { box-shadow: none; transform: none; background: var(--surface-2); }
+body.tema-app .adm__pcard:hover, body.tema-app .ger__ficha:hover { border-color: transparent; box-shadow: none; background: var(--surface-2); }
+body.tema-app .adm__table th { background: var(--surface-2); color: var(--muted); }
+body.tema-app .adm__table td { border-bottom-color: var(--border); }
+body.tema-app .adm__skel, body.tema-app .acs-skel {
+  background: linear-gradient(90deg, #2c2c2e 25%, #3a3a3c 50%, #2c2c2e 75%); background-size: 200% 100%;
+}
+
+/* Botões e chips */
+body.tema-app .adm__btn { background: var(--surface-2); border-color: transparent; color: var(--text); }
+body.tema-app .adm__btn--primary { background: var(--blue); color: #fff; box-shadow: none; }
+body.tema-app .adm__btn--whatsapp { background: var(--green); border-color: var(--green); color: #000; box-shadow: none; }
+body.tema-app .adm__btn--whatsapp:hover { background: #28b84c; }
+body.tema-app .adm__chip { background: var(--surface-2); border-color: transparent; color: #c7c7cc; }
+body.tema-app .adm__chip:hover { border-color: transparent; color: #fff; }
+body.tema-app .adm__chip.is-active { background: var(--blue); color: #fff; }
+body.tema-app .adm__search, body.tema-app .adm__ligsel, body.tema-app .ger__barra select { background: var(--surface-2); border-color: transparent; color: var(--text); }
+body.tema-app .adm__bulkbar, body.tema-app .ger__barra {
+  background: rgba(28, 28, 30, 0.85);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-color: var(--border); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Abas: controle segmentado do iOS */
+body.tema-app .adm__tabs { border-bottom: 0; background: var(--surface); border-radius: 12px; padding: 3px; gap: 2px; }
+body.tema-app .adm__tab { border-bottom: 0; margin-bottom: 0; border-radius: 9px; color: #c7c7cc; padding: 8px 14px; }
+body.tema-app .adm__tab:hover { color: #fff; }
+body.tema-app .adm__tab.is-active { background: #636366; color: #fff; }
+body.tema-app .ger__abas {
+  background: rgba(0, 0, 0, 0.72);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom-color: var(--border);
+}
+body.tema-app .ger__abas button:hover { background: var(--surface-2); }
+body.tema-app .acs-seg { background: var(--surface); }
+body.tema-app .acs-seg button.is-active { background: #636366; color: #fff; }
+
+/* Selos e status: cores do sistema com fundo translúcido */
+body.tema-app .adm__status--pago, body.tema-app .lig-pill--b, body.tema-app .adm__card-ic--green,
+body.tema-app .ligc__premio-status.is-liberado, body.tema-app .acs-selo--on, body.tema-app .ligp__liberado,
+body.tema-app .adm__pcard-history span.is-paid, body.tema-app .adm__pcard-history span.is-whatsapp, body.tema-app .adm__whatsapp-tag {
+  background: rgba(48, 209, 88, 0.16); color: var(--green);
+}
+body.tema-app .adm__status--pend, body.tema-app .lig-pill--a, body.tema-app .adm__card-ic--amber,
+body.tema-app .ligc__premio-parcial, body.tema-app .ligc__premio-status.is-parcial, body.tema-app .acs-selo--pix,
+body.tema-app .adm__pcard-history span {
+  background: rgba(255, 159, 10, 0.16); color: var(--ios-orange);
+}
+body.tema-app .adm__status--canc, body.tema-app .lig-pill--r, body.tema-app .adm__pcard-history span.is-voltou {
+  background: rgba(255, 69, 58, 0.16); color: var(--ios-red);
+}
+body.tema-app .adm__card-ic--violet { background: rgba(191, 90, 242, 0.16); color: var(--ios-purple); }
+body.tema-app .acs-selo, body.tema-app .ger__pill-cad, body.tema-app .ligc__premio-liberar { background: var(--surface-2); color: var(--muted); }
+body.tema-app .acs-selo--pago { background: var(--green); color: #000; }
+body.tema-app .resumo__card--retorno strong, body.tema-app .trs__card small, body.tema-app .ger-auto.is-alerta { color: var(--ios-orange); }
+body.tema-app .resumo__card--ruim strong, body.tema-app .ligc__premio-erro, body.tema-app .cfg-status.is-off { color: var(--ios-red); }
+body.tema-app .ligc--bom { border-left-color: var(--green); }
+body.tema-app .ligc--ruim { border-left-color: var(--ios-red); }
+body.tema-app .ligc__bom { background: var(--green); color: #000; }
+body.tema-app .ligc__ruim { background: var(--ios-red); }
+
+/* Avisos e caixas destacadas */
+body.tema-app .cfg-warn { background: rgba(255, 159, 10, 0.14); color: #ffb340; }
+body.tema-app .cfg-warn code { background: rgba(255, 255, 255, 0.08); }
+body.tema-app .usr-status { background: rgba(48, 209, 88, 0.14); border-color: transparent; color: var(--green); }
+body.tema-app .admmodal { background: rgba(0, 0, 0, 0.6); }
+body.tema-app .admmodal__history-row.is-latest { border-color: rgba(10, 132, 255, 0.5); }
+body.tema-app .admmodal__whatsapp.is-ready { background: rgba(48, 209, 88, 0.12); border-color: rgba(48, 209, 88, 0.4); }
+body.tema-app .admmodal__pixcopy { background: rgba(10, 132, 255, 0.1); border-color: rgba(10, 132, 255, 0.35); }
+body.tema-app .admmodal__pixcopy.is-waiting { background: rgba(255, 159, 10, 0.1); border-color: rgba(255, 159, 10, 0.35); }
+body.tema-app .admmodal__num.is-win { background: rgba(255, 214, 10, 0.16); border-color: rgba(255, 214, 10, 0.5); color: var(--yellow); }
+body.tema-app code { background: var(--surface-2); color: #e5e5ea; }
+
+/* Acessos */
+body.tema-app .acs-graf__grade { border-top-color: var(--border); }
+body.tema-app .acs-tl { border-left-color: var(--border); }
+
+/* Ligador / gerente: barra de cima como navegação do iOS */
+body.tema-app .ligp__top {
+  position: sticky; top: 0; z-index: 6;
+  background: rgba(28, 28, 30, 0.8);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding-top: calc(14px + var(--safe-top));
+}
+body.tema-app .ligp__sair { background: var(--surface-2); color: var(--ios-red); }
+body.tema-app .ligp__live { background: var(--ios-red); }
+body.tema-app .ligp__live.is-off { background: var(--ios-orange); color: #000; }
+body.tema-app .lig-login__input { background: var(--surface-2); border-color: transparent; }
+body.tema-app .lig-login__btn, body.tema-app .ligp__gate-btn, body.tema-app .cfg-copy button,
+body.tema-app .ntf__ok, body.tema-app .ligc__premio-salvar { background: var(--blue); color: #fff; }
+
+/* Celular: barras de vidro escuro (cima e abas embaixo) e folha */
+@media (max-width: 860px) {
+  body.tema-app .adm__appbar, body.tema-app .adm__tabbar {
+    background: rgba(18, 18, 20, 0.78);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-color: var(--border);
+  }
+  body.tema-app .adm__appbar .adm__brand-mark { box-shadow: none; }
+  body.tema-app .adm__tabbar button { color: #8e8e93; }
+  body.tema-app .adm__tabbar button.is-active { color: var(--blue); }
+  body.tema-app .adm__tabbar-ic em { background: var(--ios-red); }
+  body.tema-app .adm__sheet-fundo { background: rgba(0, 0, 0, 0.55); }
+  body.tema-app .adm__sheet { background: var(--surface); }
+  body.tema-app .adm__sheet-alca { background: #48484a; }
+  body.tema-app .adm__sheet-item.is-perigo, body.tema-app .adm__sheet-item.is-perigo svg { color: var(--ios-red); }
+  body.tema-app .adm__tabs { border-radius: 10px; }
+}
+
+/* ===========================================================================
+   DECLARAÇÃO DE VALORES DO PRÊMIO — /ganhador (etapa) e ficha do ligador (botão)
+   Cores vêm das variáveis do tema, então funciona no site claro e no tema escuro.
+   =========================================================================== */
+.decl {
+  margin-top: 18px; padding: 22px 20px; border-radius: 18px;
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+  display: flex; flex-direction: column; align-items: stretch; gap: 12px; text-align: left;
+}
+.decl--analise { align-items: center; text-align: center; }
+.decl__titulo { margin: 0; font-size: 1.1rem; font-weight: 800; letter-spacing: -0.01em; color: var(--text); }
+.decl__titulo--alerta { color: var(--ios-red, #d23b4a); }
+.decl__titulo--ok { color: var(--green-dark, #1e9440); }
+.decl__texto { margin: 0; font-size: 0.92rem; line-height: 1.5; color: var(--muted); }
+.decl__erro { margin: 0; font-size: 0.85rem; color: #d23b4a; background: rgba(210, 59, 74, 0.1); border-radius: 10px; padding: 8px 12px; }
+.decl__btn {
+  height: 50px; border-radius: 14px; font-weight: 800; font-size: 0.98rem; width: 100%;
+  transition: transform 0.12s ease, background 0.2s ease;
+}
+.decl__btn:active { transform: scale(0.98); }
+.decl__btn--verde { background: #1fa855; color: #fff; box-shadow: 0 8px 20px rgba(31, 168, 85, 0.3); }
+.decl__btn--verde:hover { background: #18914a; }
+.decl__btn--cinza { background: var(--surface-2, #eef0f7); color: var(--muted); }
+.decl__btn:disabled { opacity: 0.55; }
+
+.decl__spin {
+  width: 42px; height: 42px; border-radius: 50%; margin: 6px auto;
+  border: 4px solid var(--border); border-top-color: #1fa855; animation: decl-gira 0.9s linear infinite;
+}
+@keyframes decl-gira { to { transform: rotate(360deg); } }
+
+/* Modal da declaração */
+.decl-modal {
+  position: fixed; inset: 0; z-index: 300; background: rgba(8, 10, 24, 0.6);
+  display: flex; align-items: flex-end; justify-content: center; padding: 0;
+  animation: decl-fade 0.2s ease;
+}
+@media (min-width: 620px) { .decl-modal { align-items: center; padding: 20px; } }
+@keyframes decl-fade { from { opacity: 0; } to { opacity: 1; } }
+.decl-modal__caixa {
+  width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto; overscroll-behavior: contain;
+  background: var(--surface); border-radius: 22px 22px 0 0; padding: 20px 18px calc(22px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: 16px; animation: decl-sobe 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@media (min-width: 620px) { .decl-modal__caixa { border-radius: 22px; } }
+@keyframes decl-sobe { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+.decl-modal__cabeca { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.decl-modal__fechar { width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2, #eef0f7); color: var(--muted); font-size: 1.3rem; line-height: 1; }
+
+.decl-pergunta { display: flex; flex-direction: column; gap: 8px; }
+.decl-pergunta > span:first-child { font-weight: 700; font-size: 0.95rem; color: var(--text); }
+.decl-dica { font-size: 0.8rem; color: var(--muted); }
+.decl-sim-nao { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.decl-sim-nao button {
+  height: 44px; border-radius: 12px; font-weight: 700; background: var(--surface-2, #eef0f7); color: var(--text);
+  border: 1px solid transparent; transition: background 0.15s ease, color 0.15s ease;
+}
+.decl-sim-nao button.is-on { background: var(--blue, #1e3fcf); color: #fff; }
+
+.decl-contas { display: flex; flex-direction: column; gap: 12px; }
+.decl-contas__titulo { font-weight: 800; font-size: 0.95rem; color: var(--text); }
+.decl-conta { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 14px; background: var(--bg, #f3f5fb); border: 1px solid var(--border); }
+.decl-conta__topo { display: flex; align-items: center; justify-content: space-between; }
+.decl-conta__remover { font-size: 0.8rem; font-weight: 700; color: #d23b4a; }
+.decl-conta__adicionar { height: 44px; border-radius: 12px; border: 1.5px dashed var(--blue, #1e3fcf); color: var(--blue, #1e3fcf); font-weight: 800; background: transparent; }
+.decl-valor {
+  height: 46px; width: 100%; padding: 0 14px; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.decl-valor:focus { outline: none; border-color: var(--blue, #1e3fcf); box-shadow: 0 0 0 3px rgba(30, 63, 207, 0.18); }
+
+/* Seletor de banco (abre pra baixo, com busca) */
+.decl-banco { position: relative; }
+.decl-banco__campo {
+  width: 100%; height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 14px; border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--border); color: var(--text); text-align: left;
+}
+.decl-banco__campo.is-aberto { border-color: var(--blue, #1e3fcf); box-shadow: 0 0 0 3px rgba(30, 63, 207, 0.18); }
+.decl-banco__nome { flex: 1; min-width: 0; font-weight: 700; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.decl-banco__campo .decl-banco__nome:only-child { color: var(--muted); font-weight: 500; }
+.decl-banco__cod { flex: none; font-size: 0.78rem; font-weight: 800; padding: 3px 8px; border-radius: 8px; background: var(--surface-2, #eef0f7); color: var(--muted); font-variant-numeric: tabular-nums; }
+.decl-banco__seta { color: var(--muted); }
+.decl-banco__lista {
+  position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 20;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+  padding: 8px; display: flex; flex-direction: column; gap: 8px; animation: decl-fade 0.15s ease;
+}
+.decl-banco__busca { height: 42px; border-radius: 10px; padding: 0 12px; border: 1px solid var(--border); background: var(--bg, #f3f5fb); color: var(--text); font-size: 0.95rem; }
+.decl-banco__busca:focus { outline: none; border-color: var(--blue, #1e3fcf); }
+.decl-banco__scroll { max-height: 240px; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 2px; }
+.decl-banco__item { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; padding: 8px 10px; border-radius: 10px; text-align: left; color: var(--text); }
+.decl-banco__item:hover, .decl-banco__item:focus { background: var(--surface-2, #eef0f7); outline: none; }
+.decl-banco__item.is-on { background: var(--blue-light, #eaeefc); }
+.decl-banco__item-nome { font-weight: 600; font-size: 0.92rem; }
+.decl-banco__vazio { margin: 0; padding: 14px; text-align: center; color: var(--muted); font-size: 0.9rem; }
+
+/* Botão da ficha do ligador */
+.decl-ficha { margin: 10px 0 12px; padding: 12px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); display: flex; flex-direction: column; gap: 10px; }
+.decl-ficha__rotulo { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); }
+.decl-ficha__linha { display: flex; flex-wrap: wrap; gap: 8px; }
+.decl-ficha__linha .decl-ficha__btn { flex: 1 1 180px; }
+.decl-ficha__btn {
+  min-height: 46px; padding: 0 16px; border-radius: 12px; font-weight: 800; font-size: 0.92rem; width: 100%;
+  transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.decl-ficha__btn:active { transform: scale(0.98); }
+.decl-ficha__btn--cinza { background: var(--surface-2, #eef0f7); color: var(--muted); }
+.decl-ficha__btn--verde { background: #1fa855; color: #fff; box-shadow: 0 6px 16px rgba(31, 168, 85, 0.3); }
+.decl-ficha__btn--verde:hover { background: #18914a; }
+.decl-ficha__btn--contorno { background: transparent; border: 1.5px solid #d23b4a; color: #d23b4a; }
+.decl-ficha__btn--vermelho { background: #d23b4a; color: #fff; animation: decl-pulso 1.6s ease-in-out infinite; }
+.decl-ficha__btn--liberado { background: rgba(31, 168, 85, 0.14); color: #1e9440; }
+.decl-ficha__btn:disabled { opacity: 1; cursor: default; }
+.decl-ficha__btn--vermelho:disabled { opacity: 1; }
+@keyframes decl-pulso {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(210, 59, 74, 0.45); }
+  50% { box-shadow: 0 0 0 10px rgba(210, 59, 74, 0); }
+}
+.decl-ficha__aviso { margin: 0; font-size: 0.88rem; font-weight: 700; color: #d23b4a; background: rgba(210, 59, 74, 0.08); border-radius: 10px; padding: 10px 12px; }
+.decl-ficha__contas { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.decl-ficha__contas li { display: flex; justify-content: space-between; gap: 10px; font-size: 0.86rem; color: var(--text); padding: 6px 10px; border-radius: 10px; background: var(--bg, #f3f5fb); }
+.decl-ficha__contas small { color: var(--muted); }
+.decl-ficha__cartao { margin: 0; font-size: 0.8rem; color: var(--muted); }
+.decl-ficha__erro { margin: 0; font-size: 0.82rem; color: #d23b4a; }
+.decl-ficha--pendente { border-color: rgba(210, 59, 74, 0.45); }
+.decl-ficha--regularizado { border-color: rgba(31, 168, 85, 0.45); }

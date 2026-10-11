@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { maskCpf, maskTelefone, onlyDigits } from '../utils/masks.js'
 import { pegarNome, pegarNascimento, formatarData, consultarCpfBanco } from '../lib/consultaCpf.js'
 import Contemplacao from '../components/Contemplacao.jsx'
+import DeclaracaoPremio from '../components/DeclaracaoPremio.jsx'
 
 const espera = (ms) => new Promise((r) => setTimeout(r, ms))
 
@@ -12,6 +13,7 @@ export default function Ganhador() {
   const [cpf, setCpf] = useState('')
   const [resultado, setResultado] = useState(null)
   const vivoRef = useRef(true)
+  const [declaracaoConcluida, setDeclaracaoConcluida] = useState(false)
 
   useEffect(() => {
     vivoRef.current = true
@@ -94,6 +96,9 @@ export default function Ganhador() {
       <main className="gw gw--win">
         <div className="gw__win-wrap">
           <Contemplacao nome={nome} cpf={cpf} dados={dados} mostrarMinha={false} mostrarWhatsapp={false} compact />
+          {!declaracaoConcluida && (
+            <DeclaracaoPremio cpf={cpf} onConcluir={() => setDeclaracaoConcluida(true)} />
+          )}
         </div>
       </main>
     )

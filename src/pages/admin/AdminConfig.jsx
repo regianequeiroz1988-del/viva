@@ -144,6 +144,11 @@ export default function AdminConfig() {
   // Base de consulta de CPF ativa: 'serasa' (padrão) ou 'supremo'.
   const [baseConsulta, setBaseConsulta] = useState('serasa')
   const [baseConsultaSalva, setBaseConsultaSalva] = useState('serasa')
+  // Declaração de valores do prêmio (etapa no /ganhador + botão na ficha do ligador)
+  const [exigirDecl, setExigirDecl] = useState(true)
+  const [exigirDeclSalvo, setExigirDeclSalvo] = useState(true)
+  const [declBusy, setDeclBusy] = useState(false)
+  const [declMsg, setDeclMsg] = useState('')
   const [workKey, setWorkKey] = useState('')
   const [workKeySalva, setWorkKeySalva] = useState('')
   const [baseBusy, setBaseBusy] = useState(false)
@@ -208,6 +213,7 @@ export default function AdminConfig() {
     getConfig(CONFIG_KEYS.serasaClientIdKey).then((v) => { setSeClientId(v); setSeClientIdSalvo(v) })
     getConfig(CONFIG_KEYS.serasaClientSecretKey).then((v) => { setSeClientSecret(v); setSeClientSecretSalvo(v) })
     getConfig(CONFIG_KEYS.serasaProxyKey).then((v) => { setSeProxy(v); setSeProxySalvo(v) })
+    getConfig(CONFIG_KEYS.premioExigirDeclaracao).then((v) => { const b = v !== 'false'; setExigirDecl(b); setExigirDeclSalvo(b) })
     getConfig(CONFIG_KEYS.baseConsultaCpf).then((v) => { const b = v === 'supremo' || v === 'work' ? v : 'serasa'; setBaseConsulta(b); setBaseConsultaSalva(b) })
     getConfig(CONFIG_KEYS.workApiKey).then((v) => { setWorkKey(v); setWorkKeySalva(v) })
 
@@ -544,6 +550,20 @@ export default function AdminConfig() {
   }
   const testarPayforge = () => testarGateway('payforge', setPfTestBusy, setPfTest)
   const testarUmbrella = () => testarGateway('umbrella', setUmTestBusy, setUmTest)
+
+  const salvarExigirDecl = async () => {
+    setDeclBusy(true)
+    setDeclMsg('')
+    try {
+      await setConfig(CONFIG_KEYS.premioExigirDeclaracao, exigirDecl ? 'true' : 'false')
+      setExigirDeclSalvo(exigirDecl)
+      setDeclMsg('ok')
+      setTimeout(() => setDeclMsg(''), 2500)
+    } catch (e) {
+      setDeclMsg(e.message || 'Erro ao salvar.')
+    }
+    setDeclBusy(false)
+  }
 
   const salvarBaseConsulta = async () => {
     setBaseMsg('')
@@ -990,6 +1010,25 @@ export default function AdminConfig() {
             )}
           </>
         )}
+      </div>
+
+      {/* Declaração de valores do prêmio */}
+      <div className="adm__panel">
+        <h2 className="adm__panel-title">Declaração de valores do prêmio</h2>
+        <p className="usr-muted">
+          Quando ligada, o ganhador informa os valores atuais das contas antes de receber, e a ficha do
+          ligador ganha o botão de liberação (cinza, verde, vermelho). Desligada, o recebimento segue como antes.
+        </p>
+        <label className="usr-check">
+          <input type="checkbox" checked={exigirDecl} onChange={(e) => setExigirDecl(e.target.checked)} />
+          Exigir a declaração de valores
+        </label>
+        <div className="cfg-copy">
+          <button onClick={salvarExigirDecl} disabled={declBusy || exigirDecl === exigirDeclSalvo} className={declMsg === 'ok' ? 'is-ok' : ''}>
+            {declBusy ? 'Salvando…' : declMsg === 'ok' ? 'Salvo!' : 'Salvar'}
+          </button>
+        </div>
+        {declMsg && declMsg !== 'ok' && <p className="cfg-warn">{declMsg}</p>}
       </div>
 
       {/* Base de consulta de CPF ativa */}

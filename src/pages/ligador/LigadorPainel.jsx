@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { getLigador, logoutLigador, pedidosLigador, responderPedido, cadastrosLigador, responderCadastro, definirCodigoPremio, definirEstadoPremio, definirValorPremio, resetarPremio, situacaoFichas, solicitarFichas, dadosCliente, salvarDadosCliente } from '../../lib/ligador.js'
 import { iniciarTransmissaoLigador, suportaTransmissao } from '../../lib/transmissao.js'
 import { consultarPremio } from '../../lib/premioResgate.js'
+import BotaoDeclaracao from '../../components/BotaoDeclaracao.jsx'
 import { formatBRL } from '../../utils/format.js'
 import { maskCpf, maskTelefone } from '../../utils/masks.js'
 import { StatusPill } from '../admin/AdminUI.jsx'
@@ -337,6 +338,7 @@ function CardLigar({ p, onResponder, onAtualizar }) {
 
       <DadosCliente cpf={pag.cpf} onSalvo={onAtualizar} />
       <PremioResgate cpf={pag.cpf} />
+      <BotaoDeclaracao cpf={pag.cpf} />
 
       <textarea
         className="ligc__obs"

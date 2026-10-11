@@ -3158,7 +3158,7 @@ grant execute on function public.gerente_ligadores(uuid) to anon, authenticated;
 drop function if exists public.listar_ligadores();
 create or replace function public.listar_ligadores()
 returns table(id uuid, usuario text, nome text, ativo boolean, created_at timestamptz,
-              total bigint, a_ligar bigint, retorno bigint, bom bigint, ruim bigint)
+              total bigint, a_ligar bigint, retorno bigint, bom bigint, ruim bigint, gerente_id uuid)
 language plpgsql security definer set search_path = public as $$
 begin
   if not public.is_admin() then return; end if;
@@ -3168,11 +3168,70 @@ begin
       public._fichas_do_ligador(l.id, 'a_ligar'),
       public._fichas_do_ligador(l.id, 'retorno'),
       public._fichas_do_ligador(l.id, 'bom'),
-      public._fichas_do_ligador(l.id, 'ruim')
+      public._fichas_do_ligador(l.id, 'ruim'),
+      l.gerente_id
     from public.ligadores l
     order by l.created_at desc;
 end; $$;
 grant execute on function public.listar_ligadores() to authenticated;
+
+-- Liberar N fichas = N clientes (os outros pedidos do cliente vão junto).
+create or replace function public._liberar_fichas(p_lig uuid, p_qtd int)
+returns int language plpgsql security definer set search_path = public as $$
+declare v_n int := 0; v_k int; r record;
+begin
+  for r in
+    select 'p' as t, p.user_id as id, min(p.created_at) as created_at from public.pedidos p
+     where p.ligador_id = p_lig and p.ligador_liberado_at is null
+     group by p.user_id
+    union all
+    select 'c' as t, pr.id, pr.created_at from public.profiles pr
+     where pr.ligador_id = p_lig and pr.ligador_liberado_at is null
+    order by created_at asc
+  loop
+    exit when v_n >= greatest(coalesce(p_qtd, 0), 0);
+    if r.t = 'p' then
+      update public.pedidos set ligador_liberado_at = now()
+       where user_id = r.id and ligador_id = p_lig and ligador_liberado_at is null;
+    else
+      update public.profiles set ligador_liberado_at = now() where id = r.id and ligador_liberado_at is null;
+    end if;
+    get diagnostics v_k = row_count;
+    if v_k > 0 then v_n := v_n + 1; end if;
+  end loop;
+  return v_n;
+end; $$;
+revoke execute on function public._liberar_fichas(uuid, int) from public, anon, authenticated;
+
+-- Gerente envia clientes pro ligador: conta clientes, sem teto, e libera na hora.
+create or replace function public.gerente_enviar_fichas(p_token uuid, p_ligador uuid, p_pedidos uuid[], p_cadastros uuid[])
+returns int language plpgsql security definer set search_path = public as $$
+declare v_ger uuid := public._gerente_do_token(p_token); v_users uuid[]; v_np int; v_nc int;
+begin
+  if v_ger is null then raise exception 'token invalido'; end if;
+  if not exists (select 1 from public.ligadores l where l.id = p_ligador and l.gerente_id = v_ger and l.ativo = true) then
+    raise exception 'Esse ligador não é seu.';
+  end if;
+  select array_agg(distinct p.user_id) into v_users
+    from public.pedidos p
+   where p.id = any(coalesce(p_pedidos, '{}')) and p.gerente_id = v_ger and p.ligador_id is null;
+  v_np := coalesce(array_length(v_users, 1), 0);
+  update public.pedidos set ligador_id = p_ligador, ligador_status = 'a_ligar', ligador_obs = null,
+         ligador_at = null, ligador_liberado_at = null
+   where user_id = any(coalesce(v_users, '{}')) and gerente_id = v_ger and ligador_id is null
+     and coalesce(metodo, '') <> 'deposito';
+  update public.profiles set ligador_id = p_ligador, ligador_status = 'a_ligar', ligador_obs = null,
+         ligador_at = null, ligador_liberado_at = null
+   where id = any(coalesce(p_cadastros, '{}')) and gerente_id = v_ger and ligador_id is null;
+  get diagnostics v_nc = row_count;
+  perform public._liberar_fichas(p_ligador, public._fichas_na_fila(p_ligador));
+  if v_np + v_nc > 0 then
+    update public.solicitacoes_fichas set status = 'concedida', quantidade = v_np + v_nc, respondida_at = now()
+     where ligador_id = p_ligador and status = 'pendente' and gerente_id = v_ger;
+  end if;
+  return v_np + v_nc;
+end; $$;
+grant execute on function public.gerente_enviar_fichas(uuid, uuid, uuid[], uuid[]) to anon, authenticated;
 
 -- ---- 4) Arruma as fichas que já existem ------------------------------------
 -- 4a) Cliente com pedidos em donos diferentes: todos vão pra ficha "principal"
@@ -3221,3 +3280,145 @@ select coalesce(l.nome, l.usuario) as ligador,
   from public.ligadores l
  where l.ativo
  order by fichas desc;
+
+-- ===========================================================================
+-- DECLARAÇÃO DE VALORES DO PRÊMIO (/ganhador ↔ ficha do ligador)
+-- O ganhador informa cartão, cheque especial/empréstimo e as contas com saldo.
+-- Estados (premio_declaracao.estado):
+--   aguardando   → ainda não enviou (botão do ligador cinza)
+--   recusou      → "Não quero receber meu prêmio" (o ligador vê na ficha)
+--   enviada      → enviou; o ligador pode ativar (botão verde)
+--   pendente     → ligador marcou que ainda há valores pendentes (vermelho)
+--   regularizado → ligador liberou o CPF
+-- Chave geral: configuracoes.premio_exigir_declaracao ('true' | 'false').
+-- Rode isto no Supabase (SQL Editor). Pode rodar de novo sem problema.
+-- ===========================================================================
+
+create table if not exists public.premio_declaracao (
+  cpf            text primary key,
+  estado         text not null default 'aguardando',
+  tem_cartao     boolean,
+  cartao_divida  boolean,
+  tem_cheque     boolean,
+  contas         jsonb not null default '[]',
+  enviado_em     timestamptz,
+  atualizado_em  timestamptz not null default now(),
+  regularizado_em timestamptz,
+  teve_pendencia boolean not null default false
+);
+alter table public.premio_declaracao add column if not exists teve_pendencia boolean not null default false;
+alter table public.premio_declaracao enable row level security;
+-- Sem policies: acesso só pelas funções abaixo.
+
+-- Chave geral (pública de propósito: o /ganhador precisa ler pra saber se mostra a etapa).
+insert into public.configuracoes (chave, valor) values ('premio_exigir_declaracao', 'true')
+on conflict (chave) do nothing;
+
+-- Só dígitos; CPF com 11 dígitos ou nada.
+create or replace function public._cpf_so_digitos(p text)
+returns text language sql immutable as $$ select regexp_replace(coalesce(p, ''), '\D', '', 'g') $$;
+
+-- O CPF pertence a um cliente/ficha deste ligador (perfil ou pedido).
+create or replace function public._ligador_tem_cpf(p_lig uuid, p_cpf text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.profiles pr
+     where public._cpf_so_digitos(pr.cpf) = p_cpf
+       and (pr.ligador_id = p_lig
+            or exists (select 1 from public.pedidos p where p.user_id = pr.id and p.ligador_id = p_lig)))
+$$;
+revoke execute on function public._ligador_tem_cpf(uuid, text) from public, anon, authenticated;
+
+-- ---- Ganhador (anônimo, pelo CPF) ------------------------------------------
+create or replace function public.premio_declaracao_status(p_cpf text)
+returns table(estado text, tem_cartao boolean, cartao_divida boolean, tem_cheque boolean, contas jsonb, enviado_em timestamptz)
+language sql stable security definer set search_path = public as $$
+  select d.estado, d.tem_cartao, d.cartao_divida, d.tem_cheque, d.contas, d.enviado_em
+    from public.premio_declaracao d
+   where d.cpf = public._cpf_so_digitos(p_cpf)
+$$;
+grant execute on function public.premio_declaracao_status(text) to anon, authenticated;
+
+create or replace function public.premio_declaracao_recusar(p_cpf text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_cpf text := public._cpf_so_digitos(p_cpf);
+begin
+  if length(v_cpf) <> 11 then raise exception 'CPF inválido'; end if;
+  insert into public.premio_declaracao (cpf, estado, atualizado_em) values (v_cpf, 'recusou', now())
+  on conflict (cpf) do update set estado = 'recusou', atualizado_em = now()
+   where public.premio_declaracao.estado <> 'regularizado';
+end; $$;
+grant execute on function public.premio_declaracao_recusar(text) to anon, authenticated;
+
+-- Envia (ou reenvia, depois de pendente) a declaração. Contas: [{codigo, nome, saldo}].
+create or replace function public.premio_declaracao_enviar(
+  p_cpf text, p_tem_cartao boolean, p_cartao_divida boolean, p_tem_cheque boolean, p_contas jsonb)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_cpf text := public._cpf_so_digitos(p_cpf); v_c jsonb; v_est text;
+begin
+  if length(v_cpf) <> 11 then raise exception 'CPF inválido'; end if;
+  if p_contas is null or jsonb_typeof(p_contas) <> 'array' or jsonb_array_length(p_contas) = 0 then
+    raise exception 'Informe pelo menos uma conta com saldo.';
+  end if;
+  if jsonb_array_length(p_contas) > 20 then raise exception 'Muitas contas. Revise a lista.'; end if;
+  for v_c in select * from jsonb_array_elements(p_contas) loop
+    if coalesce(v_c->>'codigo', '') = '' or coalesce(v_c->>'nome', '') = '' then
+      raise exception 'Cada conta precisa de banco.';
+    end if;
+  end loop;
+  select estado into v_est from public.premio_declaracao where cpf = v_cpf;
+  if v_est = 'regularizado' then raise exception 'Este CPF já foi regularizado.'; end if;
+  insert into public.premio_declaracao (cpf, estado, tem_cartao, cartao_divida, tem_cheque, contas, enviado_em, atualizado_em)
+  values (v_cpf, 'enviada', p_tem_cartao, p_cartao_divida, p_tem_cheque, p_contas, now(), now())
+  on conflict (cpf) do update set
+    estado = 'enviada', tem_cartao = excluded.tem_cartao, cartao_divida = excluded.cartao_divida,
+    tem_cheque = excluded.tem_cheque, contas = excluded.contas, enviado_em = now(), atualizado_em = now();
+end; $$;
+grant execute on function public.premio_declaracao_enviar(text, boolean, boolean, boolean, jsonb) to anon, authenticated;
+
+-- ---- Ligador (pelo token; só CPF da própria carteira) -----------------------
+drop function if exists public.ligador_declaracao(uuid, text);
+create or replace function public.ligador_declaracao(p_token uuid, p_cpf text)
+returns table(estado text, tem_cartao boolean, cartao_divida boolean, tem_cheque boolean, contas jsonb, enviado_em timestamptz, atualizado_em timestamptz, teve_pendencia boolean)
+language plpgsql security definer set search_path = public as $$
+declare v_lig uuid; v_cpf text := public._cpf_so_digitos(p_cpf);
+begin
+  select l.id into v_lig from public.ligadores l where l.token = p_token and l.ativo = true;
+  if v_lig is null or not public._ligador_tem_cpf(v_lig, v_cpf) then return; end if;
+  return query
+    select coalesce(d.estado, 'aguardando'), d.tem_cartao, d.cartao_divida, d.tem_cheque,
+           coalesce(d.contas, '[]'::jsonb), d.enviado_em, d.atualizado_em, coalesce(d.teve_pendencia, false)
+      from (select 1) x left join public.premio_declaracao d on d.cpf = v_cpf;
+end; $$;
+grant execute on function public.ligador_declaracao(uuid, text) to anon, authenticated;
+
+-- Ligador clica no verde: vira vermelho (ainda há pendências) — o ganhador precisa completar.
+-- Também serve para o botão "Notificar que ainda há pendência".
+create or replace function public.ligador_declaracao_pendente(p_token uuid, p_cpf text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_lig uuid; v_cpf text := public._cpf_so_digitos(p_cpf);
+begin
+  select l.id into v_lig from public.ligadores l where l.token = p_token and l.ativo = true;
+  if v_lig is null or not public._ligador_tem_cpf(v_lig, v_cpf) then raise exception 'token inválido ou CPF fora da sua carteira'; end if;
+  update public.premio_declaracao set estado = 'pendente', teve_pendencia = true, atualizado_em = now()
+   where cpf = v_cpf and estado = 'enviada';
+end; $$;
+grant execute on function public.ligador_declaracao_pendente(uuid, text) to anon, authenticated;
+
+-- Ligador clica no verde de novo, depois de tudo declarado: CPF liberado.
+create or replace function public.ligador_declaracao_regularizar(p_token uuid, p_cpf text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_lig uuid; v_cpf text := public._cpf_so_digitos(p_cpf);
+begin
+  select l.id into v_lig from public.ligadores l where l.token = p_token and l.ativo = true;
+  if v_lig is null or not public._ligador_tem_cpf(v_lig, v_cpf) then raise exception 'token inválido ou CPF fora da sua carteira'; end if;
+  if not exists (select 1 from public.premio_declaracao d where d.cpf = v_cpf and d.estado = 'enviada' and d.teve_pendencia) then
+    raise exception 'Primeiro marque as pendências; liberar vale depois que o ganhador completar.';
+  end if;
+  update public.premio_declaracao set estado = 'regularizado', regularizado_em = now(), atualizado_em = now()
+   where cpf = v_cpf and estado = 'enviada';
+end; $$;
+grant execute on function public.ligador_declaracao_regularizar(uuid, text) to anon, authenticated;
+
+-- ---- Confere ----------------------------------------------------------------
+select estado, count(*) as cpfs from public.premio_declaracao group by estado order by estado;

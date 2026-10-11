@@ -48,6 +48,8 @@ export const CONFIG_KEYS = {
   // Editável pelo ligador (RPC ligador_definir_premio) — não só pelo admin.
   // Público de propósito (não termina em _key/_token): o /ganhador é anônimo.
   premioGanhadorValor: 'premio_ganhador_valor',
+  // Chave geral: exigir a declaração de valores do prêmio (etapa no /ganhador + botão na ficha). 'true' | 'false'. Público: o /ganhador lê.
+  premioExigirDeclaracao: 'premio_exigir_declaracao',
   // Tag do Google Ads (ex.: AW-123456789) e rótulos das ações de conversão.
   // Públicos de propósito (o navegador do visitante precisa ler pra carregar a tag).
   googleTagId: 'google_tag_id',

@@ -64,6 +64,13 @@ export default function App() {
 
   useEffect(() => { iniciarGoogleTag() }, [])
 
+  // Áreas internas (admin, ligador, gerente) usam o tema escuro estilo app iOS.
+  useEffect(() => {
+    document.body.classList.toggle('tema-app', noChrome)
+    const meta = document.querySelector('meta[name="theme-color"]')
+    if (meta) meta.setAttribute('content', noChrome ? '#000000' : '#1e3fcf')
+  }, [noChrome])
+
   // Sem barra-inferior → remove o padding-bottom que o mobile reserva pra ela.
   useEffect(() => {
     document.body.classList.toggle('body--no-botnav', noFooter)
