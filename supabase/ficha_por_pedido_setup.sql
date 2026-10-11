@@ -25,9 +25,10 @@ create or replace function public._pedido_ordem_cliente()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if new.ordem_cliente is null and new.user_id is not null and coalesce(new.metodo, '') <> 'deposito' then
-    select count(*) + 1 into new.ordem_cliente
+    perform pg_advisory_xact_lock(hashtext(new.user_id::text));
+    select coalesce(max(p.ordem_cliente), 0) + 1 into new.ordem_cliente
       from public.pedidos p
-     where p.user_id = new.user_id and coalesce(p.metodo, '') <> 'deposito';
+     where p.user_id = new.user_id;
   end if;
   return new;
 end; $$;
@@ -119,10 +120,11 @@ declare v_n int := 0; r record;
 begin
   for r in
     select 'p'::text as t, p.id, p.created_at from public.pedidos p
-     where p.gerente_id = p_ger and p.ligador_id is null
+     where p.gerente_id = p_ger and p.ligador_id is null and coalesce(p.metodo, '') <> 'deposito'
     union all
     select 'c'::text, pr.id, pr.created_at from public.profiles pr
      where pr.gerente_id = p_ger and pr.ligador_id is null
+       and not exists (select 1 from public.pedidos p where p.user_id = pr.id and p.gerente_id = p_ger)
     order by 3 asc
     limit greatest(coalesce(p_qtd, 0), 0)
   loop
@@ -153,7 +155,7 @@ begin
            coalesce(nullif(p.pagador->>'nome', ''), pr.nome), coalesce(nullif(p.pagador->>'telefone', ''), pr.telefone),
            coalesce(p.cidade, pr.cidade), coalesce(p.uf, pr.estado), p.total, p.created_at, p.ordem_cliente
       from public.pedidos p left join public.profiles pr on pr.id = p.user_id
-     where p.gerente_id = v_ger and p.ligador_id is null
+     where p.gerente_id = v_ger and p.ligador_id is null and coalesce(p.metodo, '') <> 'deposito'
     union all
     select 'cadastro'::text, pr.id, pr.nome, pr.telefone, pr.cidade, pr.estado, null::numeric, pr.created_at, 0
       from public.profiles pr
