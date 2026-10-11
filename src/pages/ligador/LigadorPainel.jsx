@@ -25,7 +25,7 @@ const fmtData = (iso) => {
 }
 
 // Uma ficha por cliente: junta os Pix gerados pela mesma pessoa num cartão só.
-// O pedido mais recente representa a ficha (o banco mantém status/obs iguais em todos).
+// O pedido pago representa a ficha (senão o mais recente); o banco mantém status/obs iguais em todos.
 function fichasPorCliente(pedidos) {
   const grupos = new Map()
   for (const p of pedidos) {
@@ -37,8 +37,7 @@ function fichasPorCliente(pedidos) {
     g.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     const pagos = g.filter((x) => x.status === 'pago')
     return {
-      ...g[0],
-      status: pagos.length ? 'pago' : g[0].status,
+      ...(pagos[0] || g[0]),
       _qtd: g.length,
       _pagos: pagos.length,
       _valorPago: pagos.reduce((s, x) => s + (Number(x.total) || 0), 0),
@@ -323,7 +322,7 @@ function CardLigar({ p, onResponder, onAtualizar }) {
           <>
             <dt>Sorteio</dt><dd title={sorteios.join(' · ')}>{sorteios.length ? sorteios.join(' · ') : '—'}</dd>
             <dt>Números</dt><dd>{numeros || '—'}</dd>
-            <dt>{p._qtd > 1 ? 'Último Pix' : 'Total'}</dt><dd>{formatBRL(p.total)}</dd>
+            <dt>{p._qtd > 1 ? (p.status === 'pago' ? 'Pix pago' : 'Último Pix') : 'Total'}</dt><dd>{formatBRL(p.total)}</dd>
             {p._qtd > 1 && (
               <>
                 <dt>Pix gerados</dt>

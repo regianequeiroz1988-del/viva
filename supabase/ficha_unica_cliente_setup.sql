@@ -39,10 +39,10 @@ begin
   if r.ligador_id is not null or r.gerente_id is not null then
     new.ligador_id := r.ligador_id;
     new.gerente_id := r.gerente_id;
-    new.ligador_status := r.ligador_status;
+    new.ligador_status := case when r.ligador_id is not null then coalesce(r.ligador_status, 'a_ligar') end;
     new.ligador_obs := r.ligador_obs;
     new.ligador_at := r.ligador_at;
-    new.ligador_liberado_at := r.ligador_liberado_at;
+    new.ligador_liberado_at := case when r.ligador_id is not null then coalesce(r.ligador_liberado_at, now()) end;
   end if;
   return new;
 end; $$;
@@ -82,7 +82,8 @@ returns int language sql stable security definer set search_path = public as $$
     (select count(distinct p.user_id) from public.pedidos p
       where p.ligador_id = p_lig and p.ligador_liberado_at is not null and coalesce(p.ligador_status, 'a_ligar') = 'a_ligar')
   + (select count(*) from public.profiles pr
-      where pr.ligador_id = p_lig and pr.ligador_liberado_at is not null and coalesce(pr.ligador_status, 'a_ligar') = 'a_ligar')
+      where pr.ligador_id = p_lig and pr.ligador_liberado_at is not null and coalesce(pr.ligador_status, 'a_ligar') = 'a_ligar'
+        and not exists (select 1 from public.pedidos p where p.user_id = pr.id and p.ligador_id = p_lig))
   )::int;
 $$;
 
@@ -90,7 +91,8 @@ create or replace function public._fichas_na_fila(p_lig uuid)
 returns int language sql stable security definer set search_path = public as $$
   select (
     (select count(distinct p.user_id) from public.pedidos p  where p.ligador_id = p_lig and p.ligador_liberado_at is null)
-  + (select count(*) from public.profiles pr where pr.ligador_id = p_lig and pr.ligador_liberado_at is null)
+  + (select count(*) from public.profiles pr where pr.ligador_id = p_lig and pr.ligador_liberado_at is null
+        and not exists (select 1 from public.pedidos p where p.user_id = pr.id and p.ligador_id = p_lig))
   )::int;
 $$;
 
@@ -98,7 +100,8 @@ create or replace function public._estoque_gerente(p_ger uuid)
 returns int language sql stable security definer set search_path = public as $$
   select (
     (select count(distinct p.user_id) from public.pedidos p where p.gerente_id = p_ger and p.ligador_id is null)
-  + (select count(*) from public.profiles pr where pr.gerente_id = p_ger and pr.ligador_id is null)
+  + (select count(*) from public.profiles pr where pr.gerente_id = p_ger and pr.ligador_id is null
+        and not exists (select 1 from public.pedidos p where p.user_id = pr.id and p.gerente_id = p_ger))
   )::int;
 $$;
 
@@ -109,7 +112,8 @@ returns bigint language sql stable security definer set search_path = public as 
     (select count(distinct p.user_id) from public.pedidos p
       where p.ligador_id = p_lig and (p_status is null or p.ligador_status = p_status))
   + (select count(*) from public.profiles pr
-      where pr.ligador_id = p_lig and (p_status is null or pr.ligador_status = p_status))
+      where pr.ligador_id = p_lig and (p_status is null or pr.ligador_status = p_status)
+        and not exists (select 1 from public.pedidos p where p.user_id = pr.id and p.ligador_id = p_lig))
   )::bigint;
 $$;
 
@@ -149,7 +153,7 @@ begin
 end; $$;
 revoke execute on function public._estoque_para_ligador(uuid, uuid, int) from public, anon, authenticated;
 
--- Estoque do gerente: uma linha por cliente (o pedido mais recente representa a ficha).
+-- Estoque do gerente: uma linha por cliente (o pedido pago representa a ficha; senão o mais recente).
 drop function if exists public.gerente_estoque(uuid);
 create or replace function public.gerente_estoque(p_token uuid)
 returns table(tipo text, id uuid, nome text, telefone text, cidade text, uf text, total numeric,
@@ -171,15 +175,34 @@ begin
         from public.pedidos p left join public.profiles pr on pr.id = p.user_id
        where p.gerente_id = v_ger and p.ligador_id is null
       window w as (partition by p.user_id)
-       order by p.user_id, p.created_at desc
+       order by p.user_id, (p.status = 'pago') desc, p.created_at desc
     ) x
     union all
     select 'cadastro'::text, pr.id, pr.nome, pr.telefone, pr.cidade, pr.estado, null::numeric, pr.created_at, 0, 0
       from public.profiles pr
      where pr.gerente_id = v_ger and pr.ligador_id is null
+       and not exists (select 1 from public.pedidos p where p.user_id = pr.id and p.gerente_id = v_ger)
     order by 8 asc;
 end; $$;
 grant execute on function public.gerente_estoque(uuid) to anon, authenticated;
+
+-- Cartões "só cadastro" do ligador: some quem já virou ficha de pedido com ele.
+create or replace function public.ligador_cadastros(p_token uuid)
+returns table(id uuid, nome text, cpf text, telefone text,
+              ligador_status text, ligador_obs text, ligador_at timestamptz, created_at timestamptz)
+language plpgsql security definer set search_path = public as $$
+declare v_lig uuid;
+begin
+  select l.id into v_lig from public.ligadores l where l.token = p_token and l.ativo = true;
+  if v_lig is null then return; end if;
+  return query
+    select pr.id, pr.nome, pr.cpf, pr.telefone, pr.ligador_status, pr.ligador_obs, pr.ligador_at, pr.created_at
+      from public.profiles pr
+     where pr.ligador_id = v_lig and pr.ligador_liberado_at is not null
+       and not exists (select 1 from public.pedidos p where p.user_id = pr.id and p.ligador_id = v_lig)
+     order by pr.created_at desc;
+end; $$;
+grant execute on function public.ligador_cadastros(uuid) to anon, authenticated;
 
 drop function if exists public.gerente_ligadores(uuid);
 create or replace function public.gerente_ligadores(p_token uuid)
