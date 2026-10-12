@@ -40,26 +40,6 @@
       document.head.appendChild(a);
     </script>
 
-    <!-- Meta Pixel (Vivendo Sorteios) — SEPARADO/ADITIVO. NÃO mexe na UTMify acima.
-         Cole o ID numérico do pixel (Events Manager) em META_PIXEL_ID.
-         Sem ID válido, fica inerte (não carrega e não dispara nada). -->
-    <script>
-      window.META_PIXEL_ID = '997944839815682'; /* Pixel "Vivendo Sorteios" (Events Manager) */
-      (function () {
-        var id = window.META_PIXEL_ID;
-        if (!/^\d{6,}$/.test(id)) return;            /* sem ID válido → não carrega nada */
-        var p = location.pathname || '';
-        if (p.indexOf('/admin') === 0 || p.indexOf('/ligador') === 0) return; /* não rastreia áreas internas */
-        !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-        n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
-        n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
-        t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
-        document,'script','https://connect.facebook.net/en_US/fbevents.js');
-        fbq('init', id);
-        fbq('track', 'PageView');
-      })();
-    </script>
-
   </head>
   <body>
     <div id="root"></div>
