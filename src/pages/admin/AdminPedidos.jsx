@@ -19,7 +19,7 @@ import { nomeBanco } from '../../utils/bancos.js'
 import { intervaloNumeros } from '../../utils/premio.js'
 import { Download, Search, Check, Phone } from '../../components/Icons.jsx'
 import { METODOS, StatusPill } from './AdminUI.jsx'
-import { consolidarPedidosPorCliente, resumoPedido } from './pedidosAgrupados.js'
+import { fichasPorPedido, resumoPedido } from './pedidosAgrupados.js'
 
 function baixarArquivo(nomeArquivo, conteudo) {
   const blob = new Blob([conteudo], { type: 'text/plain;charset=utf-8' })
@@ -502,7 +502,7 @@ export default function AdminPedidos() {
     setSel(null)
   }
 
-  const consolidados = useMemo(() => consolidarPedidosPorCliente(rows || [], nomes), [rows, nomes])
+  const consolidados = useMemo(() => fichasPorPedido(rows || [], nomes), [rows, nomes])
   const enviado = (r) => Boolean(r.ligador_id || r.gerente_id)
 
   // Abas de cadastro-só (perfis sem nenhum pedido) — some da lista quando vai pro

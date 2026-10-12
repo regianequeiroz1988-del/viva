@@ -95,3 +95,29 @@ export function consolidarPedidosPorCliente(pedidos = [], perfis = {}) {
     })
     .sort((a, b) => instante(b) - instante(a))
 }
+
+// Uma ficha por Pix: cada pedido vira um cartão, com o aviso de "voltou" calculado por pessoa.
+export function fichasPorPedido(pedidos = [], perfis = {}) {
+  const grupos = new Map()
+  pedidos.forEach((pedido) => {
+    const chave = chaveDoCliente(pedido, perfis) || `pedido:${pedido.id}`
+    grupos.set(chave, [...(grupos.get(chave) || []), pedido])
+  })
+  const saida = []
+  for (const [chave, grupo] of grupos) {
+    const { exportadoEm } = calcularExportadoVoltou(grupo)
+    const exportadoMs = exportadoEm ? new Date(exportadoEm).getTime() : 0
+    for (const pedido of grupo) {
+      saida.push({
+        ...pedido,
+        _clienteKey: chave,
+        _historico: [pedido],
+        _totalGerados: 1,
+        _totalPagos: pedido.status === 'pago' ? 1 : 0,
+        _exportadoEm: exportadoEm,
+        _voltou: exportadoMs > 0 && instante(pedido) > exportadoMs,
+      })
+    }
+  }
+  return saida.sort((a, b) => instante(b) - instante(a))
+}

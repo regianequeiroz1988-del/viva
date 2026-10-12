@@ -272,7 +272,19 @@ function DadosCliente({ cpf, onSalvo }) {
   )
 }
 
-function CardLigar({ p, onResponder, onAtualizar }) {
+// Cartão principal de cada CPF (o mais recente): só ele mostra prêmio e dados do cliente.
+function cartaoPrincipalPorCpf(rows) {
+  const mapa = new Map()
+  for (const r of rows) {
+    const cpf = String(r.pagador?.cpf || '').replace(/\D/g, '')
+    if (cpf.length !== 11) continue
+    const t = new Date(r.created_at || 0).getTime()
+    if (!mapa.has(cpf) || t > mapa.get(cpf).t) mapa.set(cpf, { id: r.id, t })
+  }
+  return mapa
+}
+
+function CardLigar({ p, onResponder, onAtualizar, principal = true }) {
   const ehCadastro = p._tipo === 'cadastro'
   const pag = p.pagador || {}
   const { sorteios, numeros } = resumo(p)
@@ -310,8 +322,14 @@ function CardLigar({ p, onResponder, onAtualizar }) {
         <dt>Data</dt><dd>{fmtData(p.created_at)}</dd>
       </dl>
 
-      <DadosCliente cpf={pag.cpf} onSalvo={onAtualizar} />
-      <PremioResgate cpf={pag.cpf} />
+      {principal ? (
+        <>
+          <DadosCliente cpf={pag.cpf} onSalvo={onAtualizar} />
+          <PremioResgate cpf={pag.cpf} />
+        </>
+      ) : (
+        pag.cpf && <p className="usr-muted">Prêmio e dados deste cliente estão no cartão mais recente dele.</p>
+      )}
       <BotaoDeclaracao cpf={pag.cpf} />
 
       <textarea
@@ -429,6 +447,7 @@ export default function LigadorPainel() {
     navigate('/ligador/entrar', { replace: true })
   }
 
+  const principais = cartaoPrincipalPorCpf(rows || [])
   const aLigar = (rows || []).filter((p) => (p.ligador_status || 'a_ligar') === 'a_ligar')
   const retornos = (rows || []).filter((p) => p.ligador_status === 'retorno')
   const finalizados = (rows || []).filter((p) => p.ligador_status === 'bom' || p.ligador_status === 'ruim')
@@ -502,7 +521,11 @@ export default function LigadorPainel() {
           <p className="usr-muted ligp__msg">{aba === 'retorno' ? 'Nenhum retorno pendente.' : 'Nada finalizado ainda.'}</p>
         ) : (
           <div className="ligp__list">
-            {lista.map((p) => <CardLigar key={p.id} p={p} onResponder={onResponder} onAtualizar={carregar} />)}
+            {lista.map((p) => {
+              const cpf = String(p.pagador?.cpf || '').replace(/\D/g, '')
+              const principal = cpf.length !== 11 || principais.get(cpf)?.id === p.id
+              return <CardLigar key={p.id} p={p} onResponder={onResponder} onAtualizar={carregar} principal={principal} />
+            })}
           </div>
         )}
         </>

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { chaveDoCliente, consolidarPedidosPorCliente } from './pedidosAgrupados.js'
+import { chaveDoCliente, consolidarPedidosPorCliente, fichasPorPedido } from './pedidosAgrupados.js'
 
 test('consolida pedidos do mesmo CPF e usa o pedido mais recente no cartão', () => {
   const pedidos = [
@@ -46,4 +46,16 @@ test('não mistura pedidos sem nenhum identificador de cliente', () => {
   ])
 
   assert.equal(resultado.length, 2)
+})
+
+test('fichasPorPedido: cada Pix da mesma pessoa vira um cartão, com aviso de voltou só nos novos', () => {
+  const pedidos = [
+    { id: 'p1', user_id: 'u1', status: 'pago', created_at: '2026-10-01T10:00:00Z', pagador: { cpf: '11111111111' }, exportado: true, exportado_at: '2026-10-02T10:00:00Z' },
+    { id: 'p2', user_id: 'u1', status: 'pendente', created_at: '2026-10-05T10:00:00Z', pagador: { cpf: '11111111111' } },
+  ]
+  const fichas = fichasPorPedido(pedidos)
+  assert.equal(fichas.length, 2)
+  assert.deepEqual(fichas.map((f) => f._historico.length), [1, 1])
+  assert.equal(fichas.find((f) => f.id === 'p2')._voltou, true)
+  assert.equal(fichas.find((f) => f.id === 'p1')._voltou, false)
 })

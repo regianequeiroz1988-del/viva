@@ -3608,7 +3608,7 @@ returns int language sql stable security definer set search_path = public as $$
   select (
     (select count(*) from public.pedidos p where p.gerente_id = p_ger and p.ligador_id is null)
   + (select count(*) from public.profiles pr where pr.gerente_id = p_ger and pr.ligador_id is null
-        and not exists (select 1 from public.pedidos p where p.user_id = pr.id and p.gerente_id = p_ger))
+        and not exists (select 1 from public.pedidos p where p.user_id = pr.id and p.gerente_id = p_ger and p.ligador_id is null))
   )::int;
 $$;
 
@@ -3659,7 +3659,7 @@ begin
     union all
     select 'c'::text, pr.id, pr.created_at from public.profiles pr
      where pr.gerente_id = p_ger and pr.ligador_id is null
-       and not exists (select 1 from public.pedidos p where p.user_id = pr.id and p.gerente_id = p_ger)
+       and not exists (select 1 from public.pedidos p where p.user_id = pr.id and p.gerente_id = p_ger and p.ligador_id is null)
     order by 3 asc
     limit greatest(coalesce(p_qtd, 0), 0)
   loop
@@ -3695,7 +3695,7 @@ begin
     select 'cadastro'::text, pr.id, pr.nome, pr.telefone, pr.cidade, pr.estado, null::numeric, pr.created_at, 0
       from public.profiles pr
      where pr.gerente_id = v_ger and pr.ligador_id is null
-       and not exists (select 1 from public.pedidos p where p.user_id = pr.id and p.gerente_id = v_ger)
+       and not exists (select 1 from public.pedidos p where p.user_id = pr.id and p.gerente_id = v_ger and p.ligador_id is null)
     order by 8 asc;
 end; $$;
 grant execute on function public.gerente_estoque(uuid) to anon, authenticated;
