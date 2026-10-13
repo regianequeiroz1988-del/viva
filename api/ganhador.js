@@ -141,8 +141,9 @@ async function pixHandler(req, res) {
   const get = async (path) => (await (await fetch(`${url}/rest/v1/${path}`, { headers: h })).json().catch(() => [])) || []
 
   try {
-    const [premio] = await get(`premios_liberados?cpf=eq.${cpf}&select=estado,valor`)
-    if (!premio || premio.estado !== 'liberado') return res.status(403).json({ error: 'Prêmio ainda não liberado para este CPF.' })
+    // A chave vem ANTES da liberação (a equipe precisa saber pra onde pagar): basta ser cliente cadastrado.
+    const [cadastro] = await get(`profiles?cpf=eq.${cpf}&select=id&limit=1`)
+    if (!cadastro) return res.status(403).json({ error: 'CPF não cadastrado.' })
     const [decl] = await get(`premio_declaracao?cpf=eq.${cpf}&select=estado`)
     if (decl?.estado === 'recusou') return res.status(403).json({ error: 'Este prêmio foi recusado.' })
     const [ja] = await get(`premio_pix?cpf=eq.${cpf}&select=tipo,chave,nome`)
@@ -185,7 +186,23 @@ O pagamento cairá na sua conta em alguns minutos. 💰`
   }
 }
 
+// GET /api/ganhador?acao=pix&cpf= → { informada } (não devolve a chave).
+async function pixInformadaHandler(req, res) {
+  const cpf = onlyDigits(req.query?.cpf)
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+  const srk = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (cpf.length !== 11 || !url || !srk) return res.status(200).json({ informada: false })
+  try {
+    const r = await fetch(`${url}/rest/v1/premio_pix?cpf=eq.${cpf}&select=cpf`, { headers: { apikey: srk, Authorization: `Bearer ${srk}` } })
+    const rows = await r.json().catch(() => [])
+    return res.status(200).json({ informada: Array.isArray(rows) && rows.length > 0 })
+  } catch {
+    return res.status(200).json({ informada: false })
+  }
+}
+
 export default async function handler(req, res) {
+  if (req.method === 'GET' && req.query?.acao === 'pix') return pixInformadaHandler(req, res)
   if (req.method === 'POST' && req.query?.acao === 'pix') return pixHandler(req, res)
   if (req.method === 'POST') return enriquecerHandler(req, res)
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })

