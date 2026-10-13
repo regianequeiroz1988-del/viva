@@ -3,7 +3,7 @@ import { useAbaVisivel } from '../../lib/useAbaVisivel.js'
 import { useNavigate } from 'react-router-dom'
 import { getLigador, logoutLigador, pedidosLigador, responderPedido, cadastrosLigador, responderCadastro, definirCodigoPremio, definirEstadoPremio, definirValorPremio, resetarPremio, situacaoFichas, solicitarFichas, dadosCliente, salvarDadosCliente } from '../../lib/ligador.js'
 import { iniciarTransmissaoLigador, suportaTransmissao } from '../../lib/transmissao.js'
-import { consultarPremioLigador } from '../../lib/premioResgate.js'
+import { consultarPremioLigador, consultarPixLigador } from '../../lib/premioResgate.js'
 import BotaoDeclaracao from '../../components/BotaoDeclaracao.jsx'
 import { formatBRL } from '../../utils/format.js'
 import { maskCpf, maskTelefone } from '../../utils/masks.js'
@@ -52,9 +52,11 @@ function PremioResgate({ cpf }) {
   const [msg, setMsg] = useState('')
   const [msgValor, setMsgValor] = useState('')
   const [busyReset, setBusyReset] = useState(false)
+  const [pix, setPix] = useState(null)
 
   const carregar = () => {
     if (!cpf) return
+    consultarPixLigador(cpf).then(setPix)
     return consultarPremioLigador(cpf).then((r) => {
       setPremio(r)
       setCodigo(r.codigo || '')
@@ -134,6 +136,13 @@ function PremioResgate({ cpf }) {
 
   return (
     <div className="ligc__premio">
+      {pix && (
+        <div className="ligc__pix">
+          <span>💸 Chave Pix ({pix.tipo === 'aleatoria' ? 'aleatória' : pix.tipo})</span>
+          <strong>{pix.chave}</strong>
+          <button type="button" onClick={() => navigator.clipboard?.writeText(pix.chave).catch(() => {})}>Copiar</button>
+        </div>
+      )}
       <div className="ligc__premio-head">
         <strong className="ligc__premio-tit">Valor do prêmio (só deste cliente)</strong>
         <button type="button" className="ligc__premio-reset" disabled={busyReset || !carregado} onClick={resetar} title="Voltar pro estado inicial (bloqueado, sem código)">

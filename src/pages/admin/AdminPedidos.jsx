@@ -382,6 +382,23 @@ function CadastroModal({ perfil, consulta, ligadores = [], onClose, onExport, on
 export default function AdminPedidos() {
   const [rows, setRows] = useState(null)
   const [nomes, setNomes] = useState({}) // user_id -> { nome, cpf, email, telefone }
+  // Chave Pix que o ganhador informou no resgate (cpf -> { tipo, chave, whatsapp_ok }).
+  const [pixPorCpf, setPixPorCpf] = useState({})
+  useEffect(() => {
+    supabase.from('premio_pix').select('cpf,tipo,chave,whatsapp_ok,whatsapp_erro').then(({ data }) => {
+      if (data) setPixPorCpf(Object.fromEntries(data.map((x) => [x.cpf, x])))
+    }, () => {})
+  }, [])
+  const pixDe = (cpf) => pixPorCpf[String(cpf || '').replace(/\D/g, '')]
+  const pixLinha = (cpf) => {
+    const x = pixDe(cpf)
+    if (!x) return null
+    return (
+      <p className="adm__pcard-obs" title={x.whatsapp_ok ? 'Confirmação enviada no WhatsApp' : `WhatsApp não enviado${x.whatsapp_erro ? `: ${x.whatsapp_erro}` : ''}`}>
+        💸 Chave Pix ({x.tipo === 'aleatoria' ? 'aleatória' : x.tipo}): <strong style={{ userSelect: 'all' }}>{x.chave}</strong> {x.whatsapp_ok ? '· ✅ WhatsApp' : '· ⚠️ sem WhatsApp'}
+      </p>
+    )
+  }
   const [cadastros, setCadastros] = useState(null) // perfis SEM nenhum pedido ("Somente Cadastros")
   const [aba, setAba] = useState('nao') // 'nao'|'exp'|'lig'|'cad'|'cadexp'
   const abasRef = useRef(null)
@@ -1325,6 +1342,7 @@ ${pulou} já ligada(s) (ou já com esse destino) ficam onde estão.` : ''}`)) re
                     <dt>Resultado</dt><dd>{ligResultado(r.ligador_status)}</dd>
                   </dl>
                   {r.ligador_obs && <p className="adm__pcard-obs">“{r.ligador_obs}”</p>}
+                  {pixLinha(r.cpf)}
                 </div>
               )
             }
@@ -1382,6 +1400,7 @@ ${pulou} já ligada(s) (ou já com esse destino) ficam onde estão.` : ''}`)) re
                   </button>
                 )}
                 {aba === 'lig' && r.ligador_obs && <p className="adm__pcard-obs">“{r.ligador_obs}”</p>}
+                {pixLinha(cpfPagador(r, nomes))}
               </div>
             )
           })

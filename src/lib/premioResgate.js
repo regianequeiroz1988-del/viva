@@ -43,3 +43,13 @@ export async function consultarPremioLigador(cpf) {
   if (error) return vazio()
   return normalizar(data)
 }
+
+/** Chave Pix que o ganhador informou (só CPF da carteira do ligador). null se não informou. */
+export async function consultarPixLigador(cpf) {
+  const l = getLigador()
+  const c = onlyDigits(cpf)
+  if (!l?.token || c.length !== 11 || !isSupabaseConfigured) return null
+  const { data, error } = await supabase.rpc('ligador_premio_pix', { p_token: l.token, p_cpf: c })
+  if (error) return null
+  return (Array.isArray(data) ? data[0] : data) || null
+}

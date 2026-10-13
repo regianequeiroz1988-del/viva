@@ -3172,3 +3172,8 @@ body.tema-app .ntf__ok, body.tema-app .ligc__premio-salvar { background: var(--b
 .pixm__chave { word-break: break-all; }
 .pixm__ok { font-size: 2.6rem; text-align: center; }
 .pixm__sucesso { margin: 16px 0 0; background: #e8f7ee; color: #146c36; border-radius: 12px; padding: 12px 14px; font-size: 0.95rem; }
+
+.ligc__pix { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; background: rgba(48, 209, 88, 0.14); border: 1px solid rgba(48, 209, 88, 0.4); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
+.ligc__pix span { font-size: 0.8rem; opacity: 0.8; width: 100%; }
+.ligc__pix strong { word-break: break-all; flex: 1; }
+.ligc__pix button { border: none; border-radius: 8px; padding: 6px 10px; font-weight: 700; background: #30d158; color: #00230b; cursor: pointer; }
