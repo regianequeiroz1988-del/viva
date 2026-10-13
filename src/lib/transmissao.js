@@ -87,10 +87,15 @@ export async function iniciarTransmissaoLigador({ token, onFim, onConexao }) {
     throw new Error('Deixe ligado "Compartilhar com áudio do sistema" ao compartilhar a tela.')
   }
 
+  // Microfone é obrigatório: sem ele não dá pra ouvir o ligador falando.
   let mic = null
   try {
     mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
-  } catch { /* sem microfone ou permissão negada — segue só com o áudio do sistema */ }
+  } catch { mic = null }
+  if (!mic?.getAudioTracks().length) {
+    tela.getTracks().forEach((t) => t.stop())
+    throw new Error('Libere o microfone pra transmitir. Clique no cadeado ao lado do endereço do site → Microfone → Permitir, e tente de novo.')
+  }
 
   // Mistura áudio do sistema + microfone numa faixa só (o <video> do admin toca uma).
   const fontes = [...tela.getAudioTracks(), ...(mic ? mic.getAudioTracks() : [])]
@@ -145,6 +150,8 @@ export async function iniciarTransmissaoLigador({ token, onFim, onConexao }) {
     onFim?.()
   }
   video.addEventListener('ended', parar) // clicou em "Parar compartilhamento" do navegador
+  // Tirou o microfone (desconectou ou revogou a permissão) → a transmissão cai.
+  mic.getAudioTracks().forEach((t) => t.addEventListener('ended', parar))
   return { parar, semMic }
 }
 
