@@ -6,6 +6,7 @@ import { formatBRL } from '../utils/format.js'
 import { getConfig, CONFIG_KEYS } from '../lib/config.js'
 import { BILHETE_PREMIADO, PREMIO_INSTANTANEO, bilhetePremiadoStr, gerarNumeros } from '../utils/premio.js'
 import VideoMensagem from './VideoMensagem.jsx'
+import PixModal from './PixModal.jsx'
 import { consultarPremio } from '../lib/premioResgate.js'
 
 const prefersReducedMotion = () =>
@@ -97,6 +98,7 @@ export default function Contemplacao({ nome, cpf, evento, numeros = 1, dados = n
   const [resgate, setResgate] = useState({ codigo: null, estado: 'bloqueado', valor: null })
   const [revelado, setRevelado] = useState(false)
   const [copiado, setCopiado] = useState(false)
+  const [pixAberto, setPixAberto] = useState(false)
 
   const meusNumeros = gerarNumeros(numeros)
 
@@ -247,7 +249,7 @@ export default function Contemplacao({ nome, cpf, evento, numeros = 1, dados = n
               type="button"
               className={`cmp__resgate-btn ${resgate.estado === 'liberado' ? 'is-liberado' : 'is-bloqueado'}`}
               disabled={resgate.estado !== 'liberado'}
-              onClick={async () => { if (onResgatar && (await onResgatar())) return; setRevelado(true) }}
+              onClick={async () => { if (onResgatar && (await onResgatar())) return; setPixAberto(true) }}
             >
               {resgate.estado === 'liberado' ? '🎁 Resgatar meu prêmio!' : '🔒 Resgatar meu prêmio!'}
             </button>
@@ -271,6 +273,10 @@ export default function Contemplacao({ nome, cpf, evento, numeros = 1, dados = n
             <span className="cmp__resgate-aguarde">Aguardando liberação da nossa equipe…</span>
           )}
         </div>
+
+        {pixAberto && (
+          <PixModal nome={nome} cpf={cpfDigits} onClose={() => setPixAberto(false)} onConfirmado={() => setRevelado(true)} />
+        )}
 
         <p className={`cmp__concorre ${cls(4)}`}>
           E não para por aí: você <strong>continua concorrendo ao prêmio total!</strong> 🍀

@@ -12,6 +12,7 @@
 
 import { consultarCpf, telefoneConfere } from '../lib/consultaCpf.js'
 import { enviarEmailBoasVindas } from '../lib/email.js'
+import { enviarTexto } from '../lib/sapi.js'
 
 const OWNDATA_BASE = 'https://completa.workbuscas.com/api'
 
@@ -107,7 +108,85 @@ async function tokenDoBanco() {
   }
 }
 
+// Valida e normaliza a chave Pix conforme o tipo. Devolve '' se inválida.
+export function normalizarChavePix(tipo, chave) {
+  const v = String(chave || '').trim()
+  const d = onlyDigits(v)
+  if (tipo === 'cpf') return d.length === 11 ? d : ''
+  if (tipo === 'cnpj') return d.length === 14 ? d : ''
+  if (tipo === 'telefone') return d.length === 10 || d.length === 11 ? `+55${d}` : ''
+  if (tipo === 'email') return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) && v.length <= 77 ? v.toLowerCase() : ''
+  if (tipo === 'aleatoria') {
+    const h = v.toLowerCase().replace(/[^0-9a-f]/g, '')
+    return h.length === 32 ? `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}` : ''
+  }
+  return ''
+}
+
+const fmtCpf = (c) => `${c.slice(0, 3)}.${c.slice(3, 6)}.${c.slice(6, 9)}-${c.slice(9)}`
+
+// POST /api/ganhador?acao=pix { cpf, tipo, chave } — ganhador informa a chave Pix.
+// Só aceita se o prêmio do CPF estiver liberado. Grava e avisa no WhatsApp (S-API).
+async function pixHandler(req, res) {
+  const cpf = onlyDigits(req.body?.cpf)
+  const tipo = String(req.body?.tipo || '')
+  const chave = normalizarChavePix(tipo, req.body?.chave)
+  if (cpf.length !== 11) return res.status(400).json({ error: 'CPF inválido.' })
+  if (!chave) return res.status(400).json({ error: 'Chave Pix inválida para o tipo escolhido.' })
+
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+  const srk = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !srk) return res.status(500).json({ error: 'Supabase service role não configurado.' })
+  const h = { apikey: srk, Authorization: `Bearer ${srk}` }
+  const get = async (path) => (await (await fetch(`${url}/rest/v1/${path}`, { headers: h })).json().catch(() => [])) || []
+
+  try {
+    const [premio] = await get(`premios_liberados?cpf=eq.${cpf}&select=estado,valor`)
+    if (!premio || premio.estado !== 'liberado') return res.status(403).json({ error: 'Prêmio ainda não liberado para este CPF.' })
+    const [decl] = await get(`premio_declaracao?cpf=eq.${cpf}&select=estado`)
+    if (decl?.estado === 'recusou') return res.status(403).json({ error: 'Este prêmio foi recusado.' })
+    const [ja] = await get(`premio_pix?cpf=eq.${cpf}&select=tipo,chave,nome`)
+    if (ja) return res.status(200).json({ ok: true, jaInformada: true, tipo: ja.tipo, chave: ja.chave, nome: ja.nome, cpf })
+
+    const [perfil] = await get(`profiles?cpf=eq.${cpf}&select=nome,telefone&limit=1`)
+    const nome = perfil?.nome || ''
+    const telefone = perfil?.telefone || ''
+
+    const ins = await fetch(`${url}/rest/v1/premio_pix`, {
+      method: 'POST',
+      headers: { ...h, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ cpf, tipo, chave, nome, telefone }),
+    })
+    if (!ins.ok) {
+      if (ins.status === 409) return res.status(200).json({ ok: true, jaInformada: true, cpf })
+      return res.status(500).json({ error: 'Não foi possível salvar a chave Pix.' })
+    }
+
+    const primeiro = String(nome).split(' ')[0] || ''
+    const msg = `Olá${primeiro ? `, ${primeiro}` : ''}! 🎉
+
+Recebemos a sua chave Pix para o pagamento do prêmio:
+
+*Nome:* ${nome || '—'}
+*CPF:* ${fmtCpf(cpf)}
+*Chave Pix (${tipo === 'aleatoria' ? 'aleatória' : tipo}):* ${chave}
+
+O pagamento cairá na sua conta em alguns minutos. 💰`
+    const w = telefone ? await enviarTexto(telefone, msg) : { ok: false, erro: 'Sem telefone no cadastro.' }
+    await fetch(`${url}/rest/v1/premio_pix?cpf=eq.${cpf}`, {
+      method: 'PATCH',
+      headers: { ...h, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ whatsapp_ok: w.ok, whatsapp_erro: w.ok ? null : w.erro, updated_at: new Date().toISOString() }),
+    }).catch(() => {})
+
+    return res.status(200).json({ ok: true, tipo, chave, nome, cpf })
+  } catch (e) {
+    return res.status(500).json({ error: 'Erro ao salvar a chave Pix.' })
+  }
+}
+
 export default async function handler(req, res) {
+  if (req.method === 'POST' && req.query?.acao === 'pix') return pixHandler(req, res)
   if (req.method === 'POST') return enriquecerHandler(req, res)
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
