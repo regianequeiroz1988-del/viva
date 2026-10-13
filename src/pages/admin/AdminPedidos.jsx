@@ -387,6 +387,9 @@ export default function AdminPedidos() {
   const abasRef = useRef(null)
   useAbaVisivel(abasRef, aba)
   const [filtro, setFiltro] = useState('todos')
+  // Aba Enviados: filtra por quem está com a ficha e pelo resultado da ligação.
+  const [ligDono, setLigDono] = useState('')
+  const [ligRes, setLigRes] = useState('')
   const [busca, setBusca] = useState('')
   const [erro, setErro] = useState('')
   const [sel, setSel] = useState(null)
@@ -539,6 +542,10 @@ export default function AdminPedidos() {
     return list
   }, [cadastros, busca, nomes])
 
+  const donoDe = (r) => (r.ligador_id ? r.ligador_id : r.gerente_id ? `g:${r.gerente_id}` : '')
+  const resDe = (r) => (r.ligador_id ? (r.ligador_status || 'a_ligar') : 'estoque')
+  const passaLig = (r) => (!ligDono || donoDe(r) === ligDono) && (!ligRes || resDe(r) === ligRes)
+
   const filtrados = useMemo(() => {
     if (aba === 'cad' || aba === 'cadexp') return cadFiltrados
     let list = consolidados
@@ -558,9 +565,10 @@ export default function AdminPedidos() {
       })
     }
     // Cadastros-só enviados ao ligador entram junto na aba "Enviados ao ligador".
-    if (aba === 'lig') list = [...list, ...ligCadastros]
+    if (aba === 'lig') list = [...list, ...ligCadastros].filter(passaLig)
     return list
-  }, [consolidados, aba, filtro, busca, nomes, cadFiltrados, ligCadastros])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [consolidados, aba, filtro, busca, nomes, cadFiltrados, ligCadastros, ligDono, ligRes])
 
   const naoCount = useMemo(() => consolidados.filter((r) => !r.exportado && !enviado(r)).length, [consolidados])
   const expCount = useMemo(() => consolidados.filter((r) => r.exportado && !enviado(r)).length, [consolidados])
@@ -984,6 +992,38 @@ Enviar mesmo assim?`)) return
     setSel(null)
   }
 
+  // Transfere pra outro ligador/gerente só as fichas que ainda não foram ligadas
+  // ("A ligar" ou paradas no estoque do gerente). Deu bom / ruim / retorno ficam onde estão.
+  const transferir = async (ids, destino) => {
+    if (!ids.length || !destino) return
+    const idsCadastro = new Set(ligCadastros.map((c) => c.id))
+    const todas = [...(rows || []), ...ligCadastros]
+    const naoLigou = (r) => r && !['bom', 'ruim', 'retorno'].includes(r.ligador_status)
+    const mover = ids.filter((id) => naoLigou(todas.find((r) => r.id === id)) && donoDe(todas.find((r) => r.id === id)) !== destino)
+    const pulou = ids.length - mover.length
+    if (!mover.length) { setErro('Nenhuma ficha selecionada está "A ligar" — nada foi transferido.'); return }
+    if (!window.confirm(`Transferir ${mover.length} ficha(s) que ainda não foram ligadas?${pulou ? `
+${pulou} já ligada(s) (ou já com esse destino) ficam onde estão.` : ''}`)) return
+    setProcessando(true)
+    setErro('')
+    const patch = patchDestino(destino)
+    const doPedido = mover.filter((id) => !idsCadastro.has(id))
+    const doCadastro = mover.filter((id) => idsCadastro.has(id))
+    const naoLigadas = 'ligador_status.is.null,ligador_status.eq.a_ligar'
+    const r1 = doPedido.length ? await supabase.from('pedidos').update(patch).in('id', doPedido).or(naoLigadas) : {}
+    const r2 = doCadastro.length ? await supabase.from('profiles').update(patch).in('id', doCadastro).or(naoLigadas) : {}
+    setProcessando(false)
+    const error = r1.error || r2.error
+    if (error) { setErro(`Não foi possível transferir: ${error.message}`); return }
+    await avisarGerente(destino)
+    const sp = new Set(doPedido), sc = new Set(doCadastro)
+    setRows((prev) => (prev || []).map((r) => (sp.has(r.id) ? { ...r, ...patch } : r)))
+    setCadastros((prev) => (prev || []).map((p) => (sc.has(p.id) ? { ...p, ...patch } : p)))
+    setSelecionados(new Set())
+    setLigadorSel('')
+    setSel(null)
+  }
+
   // "Tirar do ligador" na aba mista (pode ter pedidos e cadastros-só juntos).
   const desatribuirMisto = (ids) => {
     const idsCadastro = new Set(ligCadastros.map((c) => c.id))
@@ -1043,6 +1083,31 @@ Enviar mesmo assim?`)) return
                 {label}
               </button>
             ))}
+          </div>
+        )}
+        {aba === 'lig' && (
+          <div className="adm__filtros">
+            <select className="adm__ligsel" value={ligDono} onChange={(e) => { setLigDono(e.target.value); setSelecionados(new Set()) }}>
+              <option value="">Todos os ligadores</option>
+              {ligadores.length > 0 && (
+                <optgroup label="Ligadores">
+                  {ligadores.map((l) => <option key={l.id} value={l.id}>{l.nome || l.usuario}</option>)}
+                </optgroup>
+              )}
+              {gerentes.length > 0 && (
+                <optgroup label="Estoque do gerente">
+                  {gerentes.map((g) => <option key={g.id} value={`g:${g.id}`}>{g.nome || g.usuario}</option>)}
+                </optgroup>
+              )}
+            </select>
+            <select className="adm__ligsel" value={ligRes} onChange={(e) => { setLigRes(e.target.value); setSelecionados(new Set()) }}>
+              <option value="">Todos os resultados</option>
+              <option value="a_ligar">A ligar</option>
+              <option value="retorno">Retornar</option>
+              <option value="bom">Deu bom</option>
+              <option value="ruim">Deu ruim</option>
+              <option value="estoque">No estoque do gerente</option>
+            </select>
           </div>
         )}
       </div>
@@ -1115,6 +1180,22 @@ Enviar mesmo assim?`)) return
               <>
                 <button className="adm__btn" onClick={baixarSelecionados} disabled={processando}>
                   <Download size={16} /> Baixar .txt
+                </button>
+                <select className="adm__ligsel" value={ligadorSel} onChange={(e) => setLigadorSel(e.target.value)}>
+                  <option value="">Transferir para…</option>
+                  {ligadores.length > 0 && (
+                    <optgroup label="Ligadores">
+                      {ligadores.map((l) => <option key={l.id} value={l.id}>{l.nome || l.usuario}</option>)}
+                    </optgroup>
+                  )}
+                  {gerentes.length > 0 && (
+                    <optgroup label="Gerentes (estoque dele)">
+                      {gerentes.map((g) => <option key={g.id} value={`g:${g.id}`}>{g.nome || g.usuario}</option>)}
+                    </optgroup>
+                  )}
+                </select>
+                <button className="adm__btn" onClick={() => transferir([...selecionados], ligadorSel)} disabled={processando || !ligadorSel}>
+                  <Phone size={15} /> Transferir só “A ligar”
                 </button>
                 <button className="adm__btn adm__btn--ghost" onClick={() => desatribuirMisto([...selecionados])} disabled={processando}>
                   Tirar do ligador/gerente
