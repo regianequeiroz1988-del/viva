@@ -1,7 +1,8 @@
 // Transmissão de tela (WebRTC) ligador → admin. Sinalização em /ws/transmissao
 // (lib/transmissao.js no servidor); vídeo e áudio vão direto entre os navegadores.
 
-const ICE = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }]
+// Trocado pelo que o servidor mandar no 'ok' (inclui TURN, se configurado).
+let ICE = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }]
 
 export const suportaTransmissao = () =>
   typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getDisplayMedia && typeof RTCPeerConnection !== 'undefined'
@@ -26,7 +27,7 @@ function abrirSocket(auth, onMsg, onStatus) {
     ws.onmessage = (e) => {
       let m
       try { m = JSON.parse(e.data) } catch { return }
-      if (m.type === 'ok') onStatus(true)
+      if (m.type === 'ok') { if (Array.isArray(m.ice) && m.ice.length) ICE = m.ice; onStatus(true) }
       onMsg(m)
     }
     ws.onclose = (e) => {
@@ -159,7 +160,7 @@ export async function iniciarTransmissaoLigador({ token, onFim, onConexao }) {
 // ADMIN/GERENTE: lista quem está online e assiste um ligador por vez.
 // credenciais() → { role:'admin', jwt } ou { role:'gerente', token }
 // ---------------------------------------------------------------------------
-export function conectarPainelTransmissoes({ credenciais, onLista, onStream, onFim, onConexao }) {
+export function conectarPainelTransmissoes({ credenciais, onLista, onStream, onFim, onConexao, onEstadoVideo }) {
   let assistindo = null
   let peer = null
 
@@ -178,6 +179,7 @@ export function conectarPainelTransmissoes({ credenciais, onLista, onStream, onF
           const alvo = assistindo
           peer = criarPeer((c) => sock.enviar({ type: 'signal', to: alvo, data: { candidate: c } }))
           peer.pc.ontrack = (e) => onStream(e.streams[0] || new MediaStream([e.track]))
+          peer.pc.onconnectionstatechange = () => onEstadoVideo?.(peer?.pc.connectionState)
           await peer.remota(m.data.sdp)
           const resposta = await peer.pc.createAnswer()
           await peer.pc.setLocalDescription(resposta)

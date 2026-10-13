@@ -10,6 +10,7 @@ export default function PainelTransmissoes({ credenciais, carregarLigadores, onC
   const [assistindo, setAssistindo] = useState(null)
   const [temVideo, setTemVideo] = useState(false)
   const [somBloqueado, setSomBloqueado] = useState(false)
+  const [estadoVideo, setEstadoVideo] = useState('')
   const painel = useRef(null)
   const videoRef = useRef(null)
   const cbs = useRef({ credenciais, carregarLigadores, onConexao })
@@ -20,6 +21,7 @@ export default function PainelTransmissoes({ credenciais, carregarLigadores, onC
     const p = conectarPainelTransmissoes({
       credenciais: () => cbs.current.credenciais(),
       onLista: setOnline,
+      onEstadoVideo: setEstadoVideo,
       onConexao: (ok) => cbs.current.onConexao?.(ok),
       onStream: (stream) => {
         const v = videoRef.current
@@ -105,6 +107,9 @@ export default function PainelTransmissoes({ credenciais, carregarLigadores, onC
           </div>
           <div className="trs__video-wrap">
             <video ref={videoRef} className="trs__video" autoPlay playsInline controls />
+            {estadoVideo === 'failed' && (
+              <p className="trs__aguarde">Não foi possível conectar o vídeo com este ligador (a internet dele bloqueia conexão direta). Clique em Sair e tente de novo; se continuar, é preciso configurar um servidor TURN.</p>
+            )}
             {!temVideo && <p className="trs__aguarde">{atual?.on?.transmitindo ? 'Conectando à tela…' : 'A transmissão terminou.'}</p>}
           </div>
         </div>
