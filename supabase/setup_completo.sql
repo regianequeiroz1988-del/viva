@@ -679,7 +679,7 @@ declare v_cpf text := regexp_replace(coalesce(p_cpf, ''), '\D', '', 'g'); v_exig
 begin
   if length(v_cpf) <> 11 then return; end if;
   if not exists (select 1 from public.premios_liberados pl where pl.cpf = v_cpf) then return; end if;
-  v_exige := coalesce((select c.valor from public.configuracoes c where c.chave = 'premio_exigir_declaracao'), 'true') <> 'false';
+  v_exige := coalesce((select c.valor from public.configuracoes c where c.chave = 'premio_exigir_declaracao'), 'false') = 'true';
   select d.estado into v_decl from public.premio_declaracao d where d.cpf = v_cpf;
   return query
     select case when v_exige and coalesce(v_decl, '') <> 'regularizado' then null::text else pl.codigo end,
@@ -3397,7 +3397,7 @@ alter table public.premio_declaracao enable row level security;
 -- Sem policies: acesso só pelas funções abaixo.
 
 -- Chave geral (pública de propósito: o /ganhador precisa ler pra saber se mostra a etapa).
-insert into public.configuracoes (chave, valor) values ('premio_exigir_declaracao', 'true')
+insert into public.configuracoes (chave, valor) values ('premio_exigir_declaracao', 'false')
 on conflict (chave) do nothing;
 
 -- Só dígitos; CPF com 11 dígitos ou nada.

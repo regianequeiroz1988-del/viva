@@ -152,7 +152,7 @@ export default function PixModal({ nome, cpf, onClose, onConfirmado }) {
               <div><dt>CPF</dt><dd>{fmtCpf(cpf)}</dd></div>
               <div><dt>Chave Pix ({tipoLabel(salvo.tipo)})</dt><dd className="pixm__chave">{salvo.chave}</dd></div>
             </dl>
-            <p className="pixm__sucesso">💰 O pagamento cairá na sua conta <strong>dentro de alguns minutos</strong>. Você também vai receber a confirmação no seu WhatsApp.</p>
+            <p className="pixm__sucesso">💰 O pagamento cairá na sua conta <strong>dentro de alguns minutos</strong>.</p>
             <div className="pixm__acoes">
               <button type="button" className="pixm__btn" onClick={onClose}>Fechar</button>
             </div>

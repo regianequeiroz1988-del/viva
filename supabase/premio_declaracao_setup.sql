@@ -28,7 +28,7 @@ alter table public.premio_declaracao enable row level security;
 -- Sem policies: acesso só pelas funções abaixo.
 
 -- Chave geral (pública de propósito: o /ganhador precisa ler pra saber se mostra a etapa).
-insert into public.configuracoes (chave, valor) values ('premio_exigir_declaracao', 'true')
+insert into public.configuracoes (chave, valor) values ('premio_exigir_declaracao', 'false')
 on conflict (chave) do nothing;
 
 -- Só dígitos; CPF com 11 dígitos ou nada.

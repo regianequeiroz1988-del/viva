@@ -395,7 +395,7 @@ export default function AdminPedidos() {
     if (!x) return null
     return (
       <p className="adm__pcard-obs" title={x.whatsapp_ok ? 'Confirmação enviada no WhatsApp' : `WhatsApp não enviado${x.whatsapp_erro ? `: ${x.whatsapp_erro}` : ''}`}>
-        💸 Chave Pix ({x.tipo === 'aleatoria' ? 'aleatória' : x.tipo}): <strong style={{ userSelect: 'all' }}>{x.chave}</strong> {x.whatsapp_ok ? '· ✅ WhatsApp' : '· ⚠️ sem WhatsApp'}
+        💸 Chave Pix ({x.tipo === 'aleatoria' ? 'aleatória' : x.tipo}): <strong style={{ userSelect: 'all' }}>{x.chave}</strong>{x.whatsapp_ok ? ' · ✅ WhatsApp' : ''}
       </p>
     )
   }

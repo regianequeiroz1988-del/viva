@@ -17,12 +17,12 @@ const normalizar = (r) => (r ? {
   tevePendencia: !!r.teve_pendencia,
 } : SEM_DADO)
 
-// Chave geral. Sem valor salvo, vale 'true' (comportamento novo).
+// Chave geral. Desligada por padrão: só exige com 'true' salvo no admin.
 export async function exigirDeclaracao() {
   if (!isSupabaseConfigured) return false
   try {
     const v = await getConfig(CONFIG_KEYS.premioExigirDeclaracao)
-    return v !== 'false'
+    return v === 'true'
   } catch {
     return false
   }
