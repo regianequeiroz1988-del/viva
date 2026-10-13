@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { exigirDeclaracao, declaracaoDoLigador, marcarPendenciaLigador, regularizarLigador, dispensarDeclaracaoLigador } from '../lib/declaracao.js'
+import { declaracaoExigidaLigador, exigirDeclaracaoLigador, declaracaoDoLigador, marcarPendenciaLigador, regularizarLigador, dispensarDeclaracaoLigador } from '../lib/declaracao.js'
 import { formatBRL } from '../utils/format.js'
 
 // Botão da declaração de valores, dentro da ficha do ligador (por CPF).
@@ -20,7 +20,7 @@ export default function BotaoDeclaracao({ cpf }) {
   useEffect(() => {
     if (!cpf) return
     let parou = false
-    exigirDeclaracao().then((v) => { if (!parou && vivo.current) setAtivo(v) })
+    declaracaoExigidaLigador(cpf).then((v) => { if (!parou && vivo.current) setAtivo(v) })
     return () => { parou = true }
   }, [cpf])
 
@@ -41,7 +41,34 @@ export default function BotaoDeclaracao({ cpf }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ativo, cpf, d?.estado])
 
-  if (!ativo || !cpf || !d) return null
+  if (!cpf) return null
+
+  // Padrão: ganhador liberado sem declarar. O ligador pode pedir a declaração dele.
+  if (!ativo) {
+    const pedir = async () => {
+      if (!window.confirm('Pedir a declaração de valores deste ganhador? Ele só recebe o código depois de declarar.')) return
+      setBusy(true)
+      setErro('')
+      try {
+        await exigirDeclaracaoLigador(cpf)
+        if (vivo.current) setAtivo(true)
+      } catch (e) {
+        setErro(e.message || 'Não foi possível atualizar agora.')
+      }
+      setBusy(false)
+    }
+    return (
+      <div className="decl-ficha decl-ficha--regularizado">
+        <span className="decl-ficha__rotulo">Declaração de valores</span>
+        <button type="button" className="decl-ficha__btn decl-ficha__btn--liberado" disabled>✓ Liberado (sem declaração)</button>
+        <button type="button" className="decl-ficha__btn decl-ficha__btn--contorno" disabled={busy} onClick={pedir}>
+          Pedir declaração deste ganhador
+        </button>
+        {erro && <p className="decl-ficha__erro" role="alert">{erro}</p>}
+      </div>
+    )
+  }
+  if (!d) return null
 
   const acao = async (fn) => {
     setBusy(true)

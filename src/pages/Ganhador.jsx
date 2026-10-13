@@ -3,7 +3,7 @@ import { maskCpf, maskTelefone, onlyDigits } from '../utils/masks.js'
 import { pegarNome, pegarNascimento, formatarData, consultarCpfBanco } from '../lib/consultaCpf.js'
 import Contemplacao from '../components/Contemplacao.jsx'
 import DeclaracaoPremio from '../components/DeclaracaoPremio.jsx'
-import { exigirDeclaracao, statusDeclaracao } from '../lib/declaracao.js'
+import { precisaDeclarar } from '../lib/declaracao.js'
 
 const espera = (ms) => new Promise((r) => setTimeout(r, ms))
 
@@ -25,13 +25,7 @@ export default function Ganhador() {
   // Decide no toque (não no carregamento): a chave pode mudar com a página aberta.
   const aoResgatar = async () => {
     if (declaracaoConcluida) return false
-    if (!(await exigirDeclaracao())) return false
-    try {
-      const st = await statusDeclaracao(cpf)
-      if (st.estado === 'regularizado') { setDeclaracaoConcluida(true); return false }
-    } catch {
-      /* o cartão mostra o erro e tenta de novo */
-    }
+    if (!(await precisaDeclarar(cpf))) return false
     setDeclarando(true)
     return true
   }

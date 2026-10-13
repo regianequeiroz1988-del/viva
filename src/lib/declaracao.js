@@ -100,3 +100,26 @@ export function valorReal(texto) {
   const d = onlyDigits(texto)
   return d ? Number(d) / 100 : 0
 }
+
+// ---- Declaração por cliente (só quem o ligador pedir) -------------------------
+export async function precisaDeclarar(cpf) {
+  const c = onlyDigits(cpf)
+  if (c.length !== 11 || !isSupabaseConfigured) return false
+  const { data, error } = await supabase.rpc('ganhador_precisa_declarar', { p_cpf: c })
+  if (error) return exigirDeclaracao() // SQL novo ainda não rodado: cai na chave geral
+  return data === true
+}
+
+export async function declaracaoExigidaLigador(cpf) {
+  const l = getLigador()
+  if (!l?.token || !isSupabaseConfigured) return false
+  const { data, error } = await supabase.rpc('ligador_declaracao_exigida', { p_token: l.token, p_cpf: onlyDigits(cpf) })
+  if (error) return exigirDeclaracao()
+  return data === true
+}
+
+export async function exigirDeclaracaoLigador(cpf) {
+  const l = getLigador()
+  const { error } = await supabase.rpc('ligador_exigir_declaracao', { p_token: l.token, p_cpf: onlyDigits(cpf) })
+  if (error) throw new Error(error.message)
+}
