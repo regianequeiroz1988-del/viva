@@ -1371,6 +1371,7 @@ ${pulou} já ligada(s) (ou já com esse destino) ficam onde estão.` : ''}`)) re
                 <div className="adm__pcard-history" aria-label="Histórico de pedidos do cliente">
                   <span>Gerou <b>{r._totalGerados}×</b></span>
                   {r._totalPagos > 0 && <span className="is-paid">Pagou <b>{r._totalPagos}×</b></span>}
+                  {Number(r.ordem_cliente) > 1 && <span className="is-voltou" title="Já tem compra paga antes desta">{r.ordem_cliente}ª ficha</span>}
                   {r._voltou && <span className="is-voltou" title={`Gerou/pagou de novo depois de exportado (${dataCurta(r._exportadoEm)})`}>🔁 Voltou</span>}
                   {whatsappPreparado && <span className="is-whatsapp">WhatsApp preparado</span>}
                 </div>
